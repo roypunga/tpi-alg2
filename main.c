@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 // Función portable para limpiar pantalla
 void clear_screen() {
@@ -11,20 +12,112 @@ void clear_screen() {
 }
 
 
+struct sEncuestador{
+    int encuestador_id;
+    char nombre[30], pass[15];
+    struct sEncuestador* sgte;
+};
+
+
 void menu_encuestas();
 void menu_preguntas();
 void menu_respuestas();
+void menu_administrador();
+void menu_encuestador();
+void menu_AdmEncuestadores();
+int login(struct sEncuestador* lista);
+
+
+
 
 int main() {
-    int opcion;
+    struct sEncuestador* listaEncuestadores = NULL;
+
+    int control;
+
+    //carga de un encuestador para prueba
+    struct sEncuestador* nodo = NULL;
+    nodo = malloc(sizeof(struct sEncuestador));
+    nodo->encuestador_id = 10;
+    strcpy(nodo->nombre, "Garrafa Sanchez");
+    strcpy(nodo->pass, "taladro10");
+    nodo->sgte = NULL;
+    listaEncuestadores = nodo;
+    nodo = NULL;
+
+
+
+    do{
+        control = login(listaEncuestadores);
+
+        if(control == 2){
+            clear_screen();
+            menu_administrador();
+        }
+        if(control == 1){
+            clear_screen();
+            menu_encuestador();
+        }
+        if(control == 0){
+            clear_screen();
+            printf("Usuario o pass incorrecta, intente de nuevo. \n");
+        }
+
+    }while(control != -1);
+
+
+    return 0;
+}
+
+int login(struct sEncuestador* lista){
+    int retorno = 0;
+
+    int check;
+    char pass[15];
+    int id;
+    
+    printf("=================================\n");
+    printf("       ENCUESTAS EL CURIOSO      \n");
+    printf("=================================\n");
+    printf("Para salir ingrese -1 en el ID. (Adm: 777)\n");
+    printf("ID: \n");
+    scanf("%d", &id);
+    if(id == -1){
+        retorno = -1;
+    }
+    else if(id == 777){
+        printf("Pass de Administrador (es banfield): \n");
+        scanf("%s", pass);
+        if(!strcmp(pass, "banfield")){
+            retorno = 2;
+        }
+    }
+    else{
+        printf("Pass: \n");
+        scanf("%s", pass);
+
+        while(lista != NULL){
+                if(lista->encuestador_id == id && !strcmp(lista->pass, pass)){
+                retorno = 1;
+                }
+            lista = lista->sgte;
+        }
+    }
+
+    return retorno;
+}
+
+void menu_administrador(){
+       int opcion;
     
     do {
         printf("=================================\n");
-        printf("          MENU PRINCIPAL         \n");
+        printf("        MENU ADMINISTRADOR       \n");
         printf("=================================\n");
         printf("1. Encuestas\n");
         printf("2. Preguntas\n");
         printf("3. Respuestas\n");
+        printf("4. Encuestadores\n");
         printf("0. Salir\n");
         printf("=================================\n");
         printf("Seleccione una opcion: ");
@@ -44,8 +137,13 @@ int main() {
                 clear_screen();
                 menu_respuestas();
                 break;
+            case 4:
+                clear_screen();
+                menu_AdmEncuestadores();
+                break;
             case 0:
-                printf("Saliendo del programa...\n");
+                printf("Cerrando sesion...\n");
+                clear_screen();
                 break;
             default:
                 clear_screen();
@@ -54,10 +152,105 @@ int main() {
         }
         
     } while (opcion != 0);
-    
-    return 0;
 }
 
+void menu_AdmEncuestadores(){
+int opcion;
+    
+    do {
+        printf("=================================\n");
+        printf("        MENU ENCUESTADORES       \n");
+        printf("=================================\n");
+        printf("1. Agregar encuestador\n");
+        printf("2. Mostrar encuestadores\n");
+        printf("3. Actualizar encuestador\n");
+        printf("4. Eliminar encuestador\n");
+        printf("0. Volver al menu principal\n");
+        printf("=================================\n");
+        printf("Seleccione una opcion: ");
+        scanf("%d", &opcion);
+        while(getchar() != '\n'); // Limpiar buffer
+        
+        switch(opcion) {
+            case 1:
+                //
+                clear_screen();
+                break;
+            case 2:
+                //
+                clear_screen();
+                break;
+            case 3:
+                //
+                clear_screen();
+                break;
+            case 4:
+                //
+                clear_screen();
+                break;
+            case 0:
+                clear_screen();
+                break;
+            default:
+                clear_screen();
+                printf("\nOpcion no valida. Intente de nuevo.\n");
+        }
+    } while (opcion != 0);
+}
+
+void menu_encuestador() {
+    int opcion;
+    
+    do {
+        printf("=================================\n");
+        printf("        MENU ENCUESTADOR         \n");
+        printf("=================================\n");
+        printf("1. Cargar respuestas desde archivo CSV\n");
+        printf("2. Ingresar respuestas manualmente\n");
+        printf("3. Mostrar todas las encuestas\n");
+        printf("4. Mostrar ponderaciones\n");
+        printf("5. Mostrar encuesta específica (por ID)\n");
+        printf("0. Volver al menu principal\n");
+        printf("=================================\n");
+        printf("Seleccione una opcion: ");
+        scanf("%d", &opcion);
+        while(getchar() != '\n'); // Limpiar buffer
+        
+        switch(opcion) {
+            case 1:
+                clear_screen();
+                printf("\n--- Cargar desde CSV ---\n");
+                // Función para cargar desde CSV iría aquí
+                break;
+            case 2:
+                clear_screen();
+                printf("\n--- Ingreso manual ---\n");
+                // Función para ingreso manual iría aquí
+                break;
+            case 3:
+                clear_screen();
+                printf("\n--- Todas las encuestas ---\n");
+                // Función para mostrar todas las encuestas iría aquí
+                break;
+            case 4:
+                clear_screen();
+                printf("\n--- Ponderaciones ---\n");
+                // Función para mostrar ponderaciones iría aquí
+                break;
+            case 5:
+                clear_screen();
+                printf("\n--- Buscar por ID ---\n");
+                // Función para mostrar encuesta por ID iría aquí
+                break;
+            case 0:
+                clear_screen();
+                break;
+            default:
+                clear_screen();
+                printf("\n¡Opción no válida! Intente de nuevo.\n");
+        }
+    } while (opcion != 0);
+}
 
 void menu_encuestas() {
     int opcion;
@@ -70,6 +263,8 @@ void menu_encuestas() {
         printf("2. Mostrar encuestas\n");
         printf("3. Actualizar encuesta\n");
         printf("4. Eliminar encuesta\n");
+        printf("5. Calcular ponderacion\n");
+        printf("6. Mostrar encuesta especifica\n");
         printf("0. Volver al menu principal\n");
         printf("=================================\n");
         printf("Seleccione una opcion: ");
@@ -78,23 +273,27 @@ void menu_encuestas() {
         
         switch(opcion) {
             case 1:
-                printf("\nCreando nueva encuesta...\n");
                 //crear encuesta
                 clear_screen();
                 break;
             case 2:
-                printf("\nListado de encuestas:\n");
                 //mostrar encuestas
                 clear_screen();
                 break;
             case 3:
-                printf("\nActualizando encuesta...\n");
                 //actualizar encuesta
                 clear_screen();
                 break;
             case 4:
-                printf("\nEliminando encuesta...\n");
                 //eliminar encuesta
+                clear_screen();
+                break;
+            case 5:
+                //calcular ponderacion
+                clear_screen();
+                break;
+            case 6:
+                //mostrar encuesta por id
                 clear_screen();
                 break;
             case 0:
@@ -126,22 +325,18 @@ void menu_preguntas() {
         
         switch(opcion) {
             case 1:
-                printf("\nCreando nueva pregunta...\n");
                 //crear pregunta
                 clear_screen();
                 break;
             case 2:
-                printf("\nListado de preguntas:\n");
                 //mostrar preguntas
                 clear_screen();
                 break;
             case 3:
-                printf("\nActualizando pregunta...\n");
                 //actualizar pregunta
                 clear_screen();
                 break;
             case 4:
-                printf("\nEliminando pregunta...\n");
                 //eliminar pregunta
                 clear_screen();
                 break;
@@ -166,6 +361,7 @@ void menu_respuestas() {
         printf("2. Mostrar respuestas\n");
         printf("3. Actualizar respuesta\n");
         printf("4. Eliminar respuesta\n");
+        printf("5. Cargar respuestas desde .CSV\n");
         printf("0. Volver al menu principal\n");
         printf("=================================\n");
         printf("Seleccione una opcion: ");
@@ -174,23 +370,23 @@ void menu_respuestas() {
         
         switch(opcion) {
             case 1:
-                printf("\nCreando nueva respuesta...\n");
                 //crear respuesta
                 clear_screen();
                 break;
             case 2:
-                printf("\nListado de respuestas:\n");
                 //mostrar respuestas
                 clear_screen();
                 break;
             case 3:
-                printf("\nActualizando respuesta...\n");
                 //actualizar respuesta
                 clear_screen();
                 break;
             case 4:
-                printf("\nEliminando respuesta...\n");
                 //eliminar respuesta
+                clear_screen();
+                break;
+            case 5:
+                //cargar desde csv
                 clear_screen();
                 break;
             case 0:
