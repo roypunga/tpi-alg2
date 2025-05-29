@@ -11,6 +11,47 @@ void clear_screen() {
     #endif
 }
 
+typedef struct encuestas{
+    int encuesta_id;
+    char denominacion[50];
+    int encuesta_mes;
+    int encuesta_anio;
+    int preocesada; // 0 : no, 1: si
+    struct encuestas *sgte;
+}encuestas;
+
+typedef struct preguntas{
+    struct encuestas *encuesta_id;
+    int pregunta_id;
+    char pregunta[100];
+    float ponderacion;
+    struct preguntas *sgte;
+}preguntas;
+
+typedef struct respuestas{
+    struct preguntas *pregunta_id;
+    int respuesta_id;
+    int respuesta_nro;
+    char respuesta[100];
+    float ponderacion;
+    struct respuestas *sgte;
+}respuestas;
+
+typedef struct sEncuestador{
+    int encuestador_id;
+    char nombre[30], pass[15];
+    struct sEncuestador* sgte;
+}sEncuestador;
+
+typedef struct encuestaRespondidas{
+    struct encuestas *encuesta_id;
+    struct preguntas *pregunta_id;
+    struct respuestas *respuesta_id;
+    int fecha_realizacion;
+    struct encuestador *encuestador_id;
+    int encuestarResondida_id;
+    struct encuestaRespondidas *sgte;
+}encuestaRespondidas;
 
 struct sEncuestador{
     int encuestador_id;
@@ -25,10 +66,14 @@ void menu_respuestas();
 void menu_administrador();
 void menu_encuestador();
 void menu_AdmEncuestadores();
+void crear_encuesta();
 int login(struct sEncuestador* lista);
 
-
-
+void apilar(encuestas **tope, encuestas **nv){
+    (*nv)->sgte = (*tope);
+    (*tope) = (*nv);
+    (*nv) = NULL;
+}
 
 int main() {
     struct sEncuestador* listaEncuestadores = NULL;
@@ -273,7 +318,7 @@ void menu_encuestas() {
         
         switch(opcion) {
             case 1:
-                //crear encuesta
+                crear_encuesta();
                 clear_screen();
                 break;
             case 2:
@@ -398,4 +443,67 @@ void menu_respuestas() {
                 printf("\nOpcion no valida. Intente de nuevo.\n");
         }
     } while (opcion != 0);
+}
+
+encuestas *tope = NULL; // de momento el tope esta de manera global.
+void crear_encuesta() {
+    int opcion;
+
+    do{
+        printf("=================================\n");
+        printf("          CREAR ENCUESTA         \n");
+        printf("=================================\n");
+        printf("\n");
+        
+        // faltaria la comprobacion de que se asigne correctamente el espacio en momoria "ELIJO CREER"
+        encuestas* nueva = (encuestas*)malloc(sizeof(encuestas));
+        printf("Ingrese ID de la encuesta: ");
+        scanf("%d", &(nueva->encuesta_id));
+        while(getchar() != '\n'); // Limpiar buffer
+        
+        printf("Ingrese denominacion: ");
+        fgets(nueva->denominacion, 50, stdin);
+        nueva->denominacion[strcspn(nueva->denominacion, "\n")] = '\0';
+        
+        printf("Ingrese mes (1-12): ");
+        scanf("%d", &(nueva->encuesta_mes));
+        
+        printf("Ingrese anio: ");
+        scanf("%d", &(nueva->encuesta_anio));
+        
+        nueva->preocesada = 0; // Por defecto no procesada
+        nueva->sgte = NULL;
+        
+        // Apilar la nueva encuesta
+        apilar(&tope, &nueva);
+        printf("\nEncuesta creada y apilada con exito!\n");
+
+        // Menú de opciones después de crear
+        printf("\n¿Que desea hacer ahora?\n");
+        printf("1. Crear otra encuesta\n");
+        printf("2. Volver al menu principal\n");
+        printf("0. Salir del programa\n");
+        printf("Seleccione una opcion: ");
+        scanf("%d", &opcion);
+        while(getchar() != '\n');
+
+        switch (opcion)
+        {
+        case 1:
+            //Continua creando encuestas
+            break;
+        case 2:
+            clear_screen();
+            return;
+        case 0:
+            printf("\nSaliendo del programa...\n");
+            exit(0);
+        default:
+            printf("\nOpcion no valida. Volviendo al menu principal.\n");
+            break;
+        }
+
+
+    }while (opcion == 1);
+    
 }
