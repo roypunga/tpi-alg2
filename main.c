@@ -53,6 +53,13 @@ typedef struct encuestaRespondidas{
     struct encuestaRespondidas *sgte;
 }encuestaRespondidas;
 
+struct sEncuestador{
+    int encuestador_id;
+    char nombre[30], pass[15];
+    struct sEncuestador* sgte;
+};
+
+
 void menu_encuestas();
 void menu_preguntas();
 void menu_respuestas();
