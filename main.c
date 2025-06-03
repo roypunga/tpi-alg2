@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 // Función portable para limpiar pantalla
 void clear_screen() {
@@ -16,7 +17,7 @@ typedef struct encuestas{
     char denominacion[50];
     int encuesta_mes;
     int encuesta_anio;
-    int preocesada; // 0 : no, 1: si
+    int procesada; // 0 : no, 1: si
     struct encuestas *sgte;
 }encuestas;
 
@@ -53,23 +54,26 @@ typedef struct encuestaRespondidas{
     struct encuestaRespondidas *sgte;
 }encuestaRespondidas;
 
-void menu_encuestas();
+void menu_encuestas(encuestas **tope);
 void menu_preguntas();
 void menu_respuestas();
-void menu_administrador();
+void menu_administrador(encuestas **tope);
 void menu_encuestador();
 void menu_AdmEncuestadores();
-void crear_encuesta();
-int login(struct sEncuestador* lista);
+void mostrar_encuesta(encuestas **tope,int interactivo);
+void crear_encuesta(encuestas **tope);
+void eliminar_encuesta(encuestas **tope);
+int login(sEncuestador* lista);
+void apilar(encuestas **tope, encuestas **nv);
+void desapilar(encuestas **tope, encuestas **nodo_desapilado);
+int vacia(encuestas **tope);
+bool idExiste(encuestas *tope, int id);
+int leerNumeroValidado(const char *mensaje, const char *mensajeError, int min, int max, bool validarUnico, encuestas **tope);
 
-void apilar(encuestas **tope, encuestas **nv){
-    (*nv)->sgte = (*tope);
-    (*tope) = (*nv);
-    (*nv) = NULL;
-}
-
+//Prueba de pasar el tope desde main hasta crear_encuesta 
 int main() {
-    struct sEncuestador* listaEncuestadores = NULL;
+    sEncuestador* listaEncuestadores = NULL;
+    encuestas *tope = NULL;
 
     int control;
 
@@ -82,15 +86,13 @@ int main() {
     nodo->sgte = NULL;
     listaEncuestadores = nodo;
     nodo = NULL;
-
-
-
+    
     do{
         control = login(listaEncuestadores);
 
         if(control == 2){
             clear_screen();
-            menu_administrador();
+            menu_administrador(&tope);
         }
         if(control == 1){
             clear_screen();
@@ -105,6 +107,22 @@ int main() {
 
 
     return 0;
+}
+
+void desapilar(encuestas **tope, encuestas **nodo_desapilado){
+    (*nodo_desapilado) = (*tope);
+    (*tope) = (*tope)->sgte;
+    (*nodo_desapilado)->sgte = NULL;
+}
+
+void apilar(encuestas **tope, encuestas **nv){
+    (*nv)->sgte = (*tope);
+    (*tope) = (*nv);
+    (*nv) = NULL;
+}
+
+int vacia(encuestas **tope){
+    return(*tope == NULL);
 }
 
 int login(struct sEncuestador* lista){
@@ -145,7 +163,7 @@ int login(struct sEncuestador* lista){
     return retorno;
 }
 
-void menu_administrador(){
+void menu_administrador(encuestas **tope){
        int opcion;
     
     do {
@@ -165,7 +183,7 @@ void menu_administrador(){
         switch(opcion) {
             case 1:
                 clear_screen();
-                menu_encuestas();
+                menu_encuestas(tope);
                 break;
             case 2:
                 clear_screen();
@@ -290,9 +308,9 @@ void menu_encuestador() {
     } while (opcion != 0);
 }
 
-void menu_encuestas() {
+void menu_encuestas(encuestas **tope) {
     int opcion;
-    
+    char buffer[16];
     do {
         printf("=================================\n");
         printf("          MENU ENCUESTAS         \n");
@@ -306,16 +324,23 @@ void menu_encuestas() {
         printf("0. Volver al menu principal\n");
         printf("=================================\n");
         printf("Seleccione una opcion: ");
-        scanf("%d", &opcion);
-        while(getchar() != '\n'); // Limpiar buffer
+       //scanf("%d", &opcion);
+       // while(getchar() != '\n'); // Limpiar buffer
+        if (fgets(buffer,sizeof(buffer),stdin) != NULL)
+            opcion = atoi(buffer);
+        else
+            opcion = 0;
         
         switch(opcion) {
             case 1:
-                crear_encuesta();
+                crear_encuesta(tope);
                 clear_screen();
                 break;
             case 2:
-                //mostrar encuestas
+                //mostrar_encuesta(tope);
+                //clear_screen();
+                mostrar_encuesta(tope,1);
+                fgets(buffer, sizeof(buffer), stdin);
                 clear_screen();
                 break;
             case 3:
@@ -324,6 +349,7 @@ void menu_encuestas() {
                 break;
             case 4:
                 //eliminar encuesta
+                eliminar_encuesta(tope);
                 clear_screen();
                 break;
             case 5:
@@ -438,65 +464,357 @@ void menu_respuestas() {
     } while (opcion != 0);
 }
 
-encuestas *tope = NULL; // de momento el tope esta de manera global.
-void crear_encuesta() {
+//Muestra solamente las encuestas, sin las preguntas de dicha encuesta.
+void mostrar_encuesta(encuestas **tope, int interactivo) {
+    encuestas *nodo_desapilado = NULL;
+    encuestas *aux = NULL;
     int opcion;
 
-    do{
+    clear_screen();
+    printf("=================================\n");
+    printf("       LISTA DE ENCUESTAS        \n");
+    printf("=================================\n\n");
+
+    if (vacia(tope)) {
+        printf("No hay encuestas cargadas.\n");
+
+        if (interactivo) {
+            printf("\nPresione ENTER para volver al menu...");
+            getchar(); // Espera ENTER
+        }
+
+        return;
+    }
+
+    // Mostrar encuestas
+    while (!vacia(tope)) {
+        desapilar(tope, &nodo_desapilado);
+        printf("ID encuesta: %d\n", nodo_desapilado->encuesta_id);
+        printf("Denominacion: %s\n", nodo_desapilado->denominacion);
+        printf("Fecha: %d/%d\n", nodo_desapilado->encuesta_mes, nodo_desapilado->encuesta_anio);
+        printf("Procesada: %d\n", nodo_desapilado->procesada);
+        printf("-----------------------------\n");
+        apilar(&aux, &nodo_desapilado);
+    }
+
+    // Restaurar la pila original
+    while (!vacia(&aux)) {
+        desapilar(&aux, &nodo_desapilado);
+        apilar(tope, &nodo_desapilado);
+    }
+
+    // Menú interactivo solo si se indica
+    if (interactivo) {
+        char buffer[16];
+        do {
+            printf("\nQue desea hacer?\n");
+            printf("1. Volver al menu principal\n");
+            printf("2. Volver a mostrar encuestas\n");
+            printf("Opcion: ");
+
+            if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
+                opcion = 1;
+            } else {
+                opcion = atoi(buffer);
+            }
+
+            switch (opcion) {
+                case 1:
+                    return;
+                case 2:
+                    // Evita recursión profunda: hacer bucle
+                    clear_screen();
+                    mostrar_encuesta(tope, 1);
+                    return;
+                default:
+                    printf("Opcion no valida. Intente nuevamente.\n");
+            }
+
+        } while (opcion != 1 && opcion != 2);
+    }
+}
+
+void crear_encuesta(encuestas **tope) {
+    int opcion;
+    char buffer[64]; 
+
+    do {
         printf("=================================\n");
         printf("          CREAR ENCUESTA         \n");
-        printf("=================================\n");
-        printf("\n");
-        
-        // faltaria la comprobacion de que se asigne correctamente el espacio en momoria "ELIJO CREER"
+        printf("=================================\n\n");
+
         encuestas* nueva = (encuestas*)malloc(sizeof(encuestas));
-        printf("Ingrese ID de la encuesta: ");
-        scanf("%d", &(nueva->encuesta_id));
-        while(getchar() != '\n'); // Limpiar buffer
-        
+        if (nueva == NULL) {
+            printf("No hay espacio en memoria\n");
+            return;
+        }
+
+        // Validar ID único
+        nueva->encuesta_id = leerNumeroValidado(
+            "Ingrese ID de la encuesta: ",
+            "ID no valido",
+            1, INT_MAX,  // Rango para ID (1 a máximo entero)
+            true,        // Validar que sea único
+            tope
+        );
+
+        // Leer denominación
         printf("Ingrese denominacion: ");
-        fgets(nueva->denominacion, 50, stdin);
-        nueva->denominacion[strcspn(nueva->denominacion, "\n")] = '\0';
-        
-        printf("Ingrese mes (1-12): ");
-        scanf("%d", &(nueva->encuesta_mes));
-        
-        printf("Ingrese anio: ");
-        scanf("%d", &(nueva->encuesta_anio));
-        
-        nueva->preocesada = 0; // Por defecto no procesada
+        if (fgets(nueva->denominacion, sizeof(nueva->denominacion), stdin) != NULL) {
+            nueva->denominacion[strcspn(nueva->denominacion, "\n")] = '\0';
+        }
+
+        // Validar mes (1-12)
+        nueva->encuesta_mes = leerNumeroValidado(
+            "Ingrese mes (1-12): ",
+            "Mes no valido",
+            1, 12,
+            false,  // No validar unicidad para el mes
+            NULL
+        );
+
+        // Validar año (asumimos años entre 2000-2100)
+        nueva->encuesta_anio = leerNumeroValidado(
+            "Ingrese anio (2000-2100): ",
+            "Anio no valido",
+            2000, 2100,
+            false,  // No validar unicidad para el año
+            NULL
+        );
+
+        nueva->procesada = 0;
         nueva->sgte = NULL;
-        
-        // Apilar la nueva encuesta
-        apilar(&tope, &nueva);
+
+        apilar(tope, &nueva);
         printf("\nEncuesta creada y apilada con exito!\n");
 
         // Menú de opciones después de crear
-        printf("\n¿Que desea hacer ahora?\n");
+        printf("\nQue desea hacer ahora?\n");
         printf("1. Crear otra encuesta\n");
-        printf("2. Volver al menu principal\n");
+        printf("2. Volver al menu encuestas\n");
         printf("0. Salir del programa\n");
         printf("Seleccione una opcion: ");
-        scanf("%d", &opcion);
-        while(getchar() != '\n');
 
-        switch (opcion)
-        {
-        case 1:
-            //Continua creando encuestas
-            break;
-        case 2:
-            clear_screen();
-            return;
-        case 0:
-            printf("\nSaliendo del programa...\n");
-            exit(0);
-        default:
-            printf("\nOpcion no valida. Volviendo al menu principal.\n");
-            break;
+        if (fgets(buffer, sizeof(buffer), stdin) != NULL) {
+            opcion = atoi(buffer);
+        } else {
+            opcion = 2;  // Opción por defecto si hay error
         }
 
+        switch (opcion) {
+            case 1:
+                clear_screen();
+                break;
+            case 2:
+                clear_screen();
+                return;
+            case 0:
+                printf("\nSaliendo del programa...\n");
+                exit(0);
+            default:
+                printf("\nOpcion no valida. Volviendo al menu principal.\n");
+                clear_screen();
+                return;
+        }
+    } while (opcion == 1);
+}
 
-    }while (opcion == 1);
+void eliminar_encuesta(encuestas **tope) {
+    int opcion;
+    char buffer[64];
     
+    do {
+        clear_screen();
+        printf("=================================\n");
+        printf("       ELIMINAR ENCUESTA         \n");
+        printf("=================================\n\n");
+
+        // Verificar si hay encuestas primero
+        if (vacia(tope)) {
+            printf("No hay encuestas para eliminar.\n");
+            
+            // Menú interactivo incluso cuando no hay encuestas
+            printf("\nQue desea hacer ahora?\n");
+            printf("1. Volver al menu de encuestas\n");
+            printf("0. Salir del programa\n");
+            printf("Seleccione una opcion: ");
+            
+            if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
+                opcion = 1; // Valor por defecto si hay error
+            } else {
+                opcion = atoi(buffer);
+            }
+
+            switch (opcion) {
+                case 1:
+                    clear_screen();
+                    return;
+                case 0:
+                    printf("\nSaliendo del programa...\n");
+                    exit(0);
+                default:
+                    printf("\nOpcion no valida. Volviendo al menu de encuestas.\n");
+                    clear_screen();
+                    return;
+            }
+        }
+
+        // Mostrar todas las encuestas
+        mostrar_encuesta(tope,0);
+        
+        // Resto del código de eliminación (igual que antes)
+        int id_a_eliminar;
+        char confirmacion;
+        bool encontrada = false;
+        
+        encuestas *temp = NULL;
+        encuestas *nodo = NULL;
+        encuestas *nodo_eliminar = NULL;
+        
+        printf("\nIngrese el ID de la encuesta a eliminar (0 para cancelar): ");
+        if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
+            printf("Error al leer la entrada.\n");
+            continue;
+        }
+        id_a_eliminar = atoi(buffer);
+        
+        if (id_a_eliminar == 0) {
+            clear_screen();
+            return;
+        }
+
+        encontrada = false;
+        while (!vacia(tope)) {
+            desapilar(tope, &nodo);
+            
+            if (nodo->encuesta_id == id_a_eliminar) {
+                encontrada = true;
+                nodo_eliminar = nodo;
+                
+                printf("\nEncuesta seleccionada para eliminar:\n");
+                printf("ID: %d\n", nodo->encuesta_id);
+                printf("Denominacion: %s\n", nodo->denominacion);
+                printf("Fecha: %d/%d\n", nodo->encuesta_mes, nodo->encuesta_anio);
+                
+                printf("\nEsta seguro que desea eliminar esta encuesta? (s/n): ");
+                if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
+                    printf("Error al leer la entrada.\n");
+                    apilar(&temp, &nodo);
+                    continue;
+                }
+                confirmacion = buffer[0];
+                
+                if (confirmacion == 's' || confirmacion == 'S') {
+                    free(nodo_eliminar);
+                    printf("\nEncuesta eliminada con exito.\n");
+                } else {
+                    apilar(&temp, &nodo);
+                    printf("\nEliminacion cancelada.\n");
+                }
+            } else {
+                apilar(&temp, &nodo);
+            }
+        }
+        
+        while (!vacia(&temp)) {
+            desapilar(&temp, &nodo);
+            apilar(tope, &nodo);
+        }
+        
+        if (!encontrada && id_a_eliminar != 0) {
+            printf("\nNo se encontro una encuesta con el ID %d.\n", id_a_eliminar);
+        }
+
+        // Menú interactivo después de cualquier operación
+        printf("\nQue desea hacer ahora?\n");
+        printf("1. Eliminar otra encuesta\n");
+        printf("2. Volver al menu de encuestas\n");
+        printf("0. Salir del programa\n");
+        printf("Seleccione una opcion: ");
+        
+        if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
+            opcion = 2;
+        } else {
+            opcion = atoi(buffer);
+        }
+
+        switch (opcion) {
+            case 1:
+                break; // Continuará en el bucle
+            case 2:
+                clear_screen();
+                return;
+            case 0:
+                printf("\nSaliendo del programa...\n");
+                exit(0);
+            default:
+                printf("\nOpcion no valida. Volviendo al menu de encuestas.\n");
+                clear_screen();
+                return;
+        }
+        
+    } while (1); // Bucle infinito (se controla con las opciones)
+}
+
+// Función para verificar si un ID ya existe en la pila
+bool idExiste(encuestas *tope, int id) {
+    encuestas *temp = NULL;
+    encuestas *nodo = NULL;
+    bool existe = false;
+    
+    // Desapilar y verificar, apilando en temporal
+    while (!vacia(&tope)) {
+        desapilar(&tope, &nodo);
+        if (nodo->encuesta_id == id) {
+            existe = true;
+        }
+        apilar(&temp, &nodo);
+    }
+    
+    // Restaurar la pila original
+    while (!vacia(&temp)) {
+        desapilar(&temp, &nodo);
+        apilar(&tope, &nodo);
+    }
+    
+    return existe;
+}
+
+int leerNumeroValidado(const char *mensaje, const char *mensajeError, int min, int max, bool validarUnico, encuestas **tope) {
+    char buffer[64];
+    int numero;
+    bool entradaValida = false;
+    
+    do {
+        printf("%s", mensaje);
+        if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
+            printf("Error al leer la entrada.\n");
+            continue;
+        }
+        
+        // Verificar si la entrada es numérica
+        char *endptr;
+        numero = strtol(buffer, &endptr, 10);
+        
+        if (endptr == buffer || (*endptr != '\n' && *endptr != '\0')) {
+            printf("Error: Debe ingresar un numero valido.\n");
+            continue;
+        }
+        
+        // Validar rango
+        if (numero < min || numero > max) {
+            printf("%s (Debe estar entre %d y %d)\n", mensajeError, min, max);
+            continue;
+        }
+        
+        // Validar ID único si es necesario
+        if (validarUnico && idExiste(*tope, numero)) {
+            printf("Error: El ID %d ya existe. Ingrese un ID unico.\n", numero);
+            continue;
+        }
+        
+        entradaValida = true;
+    } while (!entradaValida);
+    
+    return numero;
 }
