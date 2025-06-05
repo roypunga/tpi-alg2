@@ -69,6 +69,8 @@ void desapilar(encuestas **tope, encuestas **nodo_desapilado);
 int vacia(encuestas **tope);
 bool idExiste(encuestas *tope, int id);
 int leerNumeroValidado(const char *mensaje, const char *mensajeError, int min, int max, bool validarUnico, encuestas **tope);
+void agregarEncuestador(sEncuestador** lista);
+void limpiarBuffer();
 
 //Prueba de pasar el tope desde main hasta crear_encuesta 
 int main() {
@@ -815,6 +817,87 @@ int leerNumeroValidado(const char *mensaje, const char *mensajeError, int min, i
         
         entradaValida = true;
     } while (!entradaValida);
+  
+}
+
+// --------------------------------------------------------- 
+
+/* CRUD ENCUESTADORES*/
+
+void limpiarBuffer() {
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF) {
+        // Descarta todos los caracteres restantes en el buffer de entrada
+        // hasta encontrar un salto de línea o fin de archivo
+    }
+}
+
+void agregarEncuestador(sEncuestador** lista) {
+    // Crear nuevo nodo
+    sEncuestador* nuevo = (sEncuestador*)malloc(sizeof(sEncuestador));
+    if (nuevo == NULL) {
+        printf("Error: No se pudo asignar memoria.\n");
+        return;
+    }
+
+    // Calcular el nuevo ID (máximo ID existente + 1)
+    int max_id = 0;
+    sEncuestador* actual = *lista;
     
+    while (actual != NULL) {
+        if (actual->encuestador_id > max_id) {
+            max_id = actual->encuestador_id;
+        }
+        actual = actual->sgte;
+    }
+    
+
+    char nombre[30], pass[15];
+    int lectura_correcta;
+
+    do {
+        printf("Ingrese el nombre del encuestador (sin espacios, max 29 chars): ");
+        lectura_correcta = scanf("%29s", nombre);  // %29s para dejar espacio para el '\0'
+        limpiarBuffer();
+        if (lectura_correcta != 1) {
+            printf("Error en la lectura. ");
+        }
+    } while (lectura_correcta != 1);
+    
+    // Lectura del password con validación
+    do {
+        printf("Ingrese la pass del encuestador (sin espacios, max 14 chars): ");
+        lectura_correcta = scanf("%14s", pass);  // %14s para dejar espacio para el '\0'
+        limpiarBuffer();
+        if (lectura_correcta != 1) {
+            printf("Error en la lectura. ");
+        }
+    } while (lectura_correcta != 1);
+
+    // Configurar el nuevo nodo
+    nuevo->encuestador_id = max_id + 1;
+    strcpy(nuevo->nombre, nombre);
+    strcpy(nuevo->pass, pass);
+
+    // Insertar al inicio de la lista
+    nuevo->sgte = *lista;
+    *lista = nuevo;
+}
+
+
+//sin modificaion de preguntas ni de respuestas!!!!
+//validador de respuestas -> es recorrido -> controla que todas las encuestas esten completas
+
+//controles: Sumatoria de ponderacion de preguntas == 1 && almenos 1 respuesta tiene ponderacion == 1
+
+//si hay una encuestaRespondida cargada no se puede borrar la encuesta
+
+//prioridades:
+// AB enc
+// AB preg -> sumen 1
+// AB resp -> haya un 1
+// CSV de quique -> este bien cargada
+// CSV sea procesado correctamente
+
     return numero;
 }
