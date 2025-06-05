@@ -584,7 +584,7 @@ void crear_encuesta(encuestas **tope) {
             NULL
         );
 
-        nueva->procesada = 1;
+        nueva->procesada = 0;
         nueva->sgte = NULL;
 
         apilar(tope, &nueva);
