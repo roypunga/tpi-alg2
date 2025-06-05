@@ -584,7 +584,7 @@ void crear_encuesta(encuestas **tope) {
             NULL
         );
 
-        nueva->procesada = 0;
+        nueva->procesada = 1;
         nueva->sgte = NULL;
 
         apilar(tope, &nueva);
@@ -624,7 +624,7 @@ void crear_encuesta(encuestas **tope) {
 void eliminar_encuesta(encuestas **tope) {
     int opcion;
     char buffer[64];
-    
+
     do {
         clear_screen();
         printf("=================================\n");
@@ -664,7 +664,7 @@ void eliminar_encuesta(encuestas **tope) {
         // Mostrar todas las encuestas
         mostrar_encuesta(tope,0);
         
-        // Resto del código de eliminación (igual que antes)
+        // Resto del código de eliminación
         int id_a_eliminar;
         char confirmacion;
         bool encontrada = false;
@@ -691,6 +691,14 @@ void eliminar_encuesta(encuestas **tope) {
             
             if (nodo->encuesta_id == id_a_eliminar) {
                 encontrada = true;
+                
+                // Verificar si la encuesta ya fue procesada
+                if (nodo->procesada == 1) {
+                    printf("\nNo se puede eliminar la encuesta porque ya ha sido procesada.\n");
+                    apilar(&temp, &nodo);
+                    break;
+                }
+                
                 nodo_eliminar = nodo;
                 
                 printf("\nEncuesta seleccionada para eliminar:\n");
@@ -817,7 +825,8 @@ int leerNumeroValidado(const char *mensaje, const char *mensajeError, int min, i
         
         entradaValida = true;
     } while (!entradaValida);
-  
+     
+    return numero;
 }
 
 // --------------------------------------------------------- 
@@ -898,6 +907,3 @@ void agregarEncuestador(sEncuestador** lista) {
 // AB resp -> haya un 1
 // CSV de quique -> este bien cargada
 // CSV sea procesado correctamente
-
-    return numero;
-}
