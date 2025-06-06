@@ -71,6 +71,10 @@ bool idExiste(encuestas *tope, int id);
 int leerNumeroValidado(const char *mensaje, const char *mensajeError, int min, int max, bool validarUnico, encuestas **tope);
 void agregarEncuestador(sEncuestador** lista);
 void limpiarBuffer();
+void crearRespuesta();
+void mostrarRespuestas();
+void eliminarRespuestas();
+void buscarBorrar(int num, respuestas **, respuestas **, int *);
 
 //Prueba de pasar el tope desde main hasta crear_encuesta 
 int main() {
@@ -892,6 +896,215 @@ void agregarEncuestador(sEncuestador** lista) {
     nuevo->sgte = *lista;
     *lista = nuevo;
 }
+
+
+//CRUD RESPUESTAS --------------->
+respuestas *inicioRespuestas = NULL; //puntero de manera global para la lista enlazada circular
+void crearRespuesta(){
+
+	int parar = 1, num = 0, verificar = 0;
+	respuestas *ini = NULL, *iniListaAux = NULL, *iniListaAuxAux = NULL;
+	ini = inicioRespuestas;
+	printf("=================================\n");
+	printf("          CREAR RESPUESTA        \n");
+	printf("=================================\n");
+	printf("\n");
+
+	printf("Ingrese el id de pregunta al que desea crearle la respuesta\n");
+	scanf("%d",&num);
+	printf("num leido: %d\n", num);
+
+	//verificar = verificarPregunta(num /*puntero al incio de la lista enlazada simple*/);
+	if(verificar == 1){
+		printf("El id de la respuesta ingresada no existe\n");
+	}
+		else { 
+			do {
+				respuestas *aux = (respuestas*)malloc(sizeof(respuestas));
+				aux->pregunta_id = num;
+				printf("pregunta_id guardada: %d\n", aux->pregunta_id);
+				//buscamos el ultimo id de respuesta creado y le sumamos 1
+				if(inicioRespuestas == NULL && iniListaAux == NULL){
+					aux->respuesta_id = 1;
+				} 
+				else {
+					if(iniListaAux == NULL){
+						do {  
+							ini = ini->sgte;
+						} while (ini->sgte != inicioRespuestas);
+						aux->respuesta_id = ini->respuesta_id + 1;
+					}	 
+					else {
+						aux->respuesta_id = iniListaAuxAux->respuesta_id + 1;
+					}
+				}
+			
+			
+				printf("Ingrese el numero de respuesta\n");
+				scanf("%d",&(aux->respuesta_nro));
+				while(getchar() != '\n'); // Limpiar buffer
+
+				printf("Ingrese la respuesta deseada\n");
+				fgets(aux->respuesta, 100, stdin);
+				aux->respuesta[strcspn(aux->respuesta, "\n")] = '\0';
+
+				
+				do {
+        			printf("Ingrese la ponderacion de la respuesta (recuerde que al menos una respuesta debe valer 1)\n");
+        			scanf("%f",&(aux->ponderacion));
+					while(getchar() != '\n'); // Limpiar buffer
+
+					if(aux->ponderacion < 0 || aux->ponderacion > 1){
+						printf("por favor ingrese un numero entre 0 y 1");
+					}
+
+    			} while (aux->ponderacion < 0 || aux->ponderacion > 1);
+				
+		
+				//agregamos el nodo a la estructura auxiliar para que despues de que se termine de cargar las respuestas verificar si da 1 la ponderacion
+				if(iniListaAux == NULL){
+				iniListaAux = aux;
+				iniListaAux->sgte = NULL;
+				iniListaAuxAux = iniListaAux;
+				aux = NULL;
+				} else {
+				iniListaAuxAux->sgte = aux;
+				aux = NULL;
+				iniListaAuxAux = iniListaAuxAux->sgte;
+				iniListaAuxAux->sgte = NULL;
+				}	
+			
+				printf("Desea cargar otra respuesta? 1 (si) / 0 (no)\n");
+				scanf("%i",&parar);
+				while(getchar() != '\n'); // Limpiar buffer
+
+			} while(parar != 0);	
+		}   
+	
+	//verificamos si hay alguna respuesta que valga 1
+	verificar = 0;
+	iniListaAuxAux = iniListaAux;
+	if(iniListaAuxAux->sgte == NULL){
+		if(iniListaAuxAux->ponderacion == 1){
+			verificar = 1;
+		} }
+		else {
+			while(iniListaAuxAux->sgte != NULL){
+			if(iniListaAuxAux->ponderacion == 1){
+				verificar = 1;
+			} 
+				iniListaAuxAux = iniListaAuxAux->sgte;
+			}
+			if(iniListaAuxAux->ponderacion == 1){
+				verificar = 1;
+			} 
+		}
+	
+	//enlazamos la lista simple auxiliar a la lista circular principal
+	if(verificar == 1 && inicioRespuestas == NULL){
+		inicioRespuestas = iniListaAux;
+		iniListaAux = NULL;
+		iniListaAuxAux->sgte = inicioRespuestas;
+		iniListaAuxAux = NULL;
+		printf("Respuestas cargadas con exito\n");
+	}
+		else if(verificar == 1 && inicioRespuestas != NULL){
+			ini->sgte = iniListaAux;
+			iniListaAux = NULL;
+			iniListaAuxAux->sgte = inicioRespuestas;
+			iniListaAuxAux = NULL;
+			printf("Respuestas cargadas con exito\n");
+		} else{
+			printf("No hay ninguna respuesta que valga 1. No se pudieron cargar las respuestas al sistema\n");
+			//borramos la lista auxiliar
+			iniListaAuxAux = iniListaAux;
+			while(iniListaAux != NULL){
+				iniListaAux = iniListaAux->sgte;
+				free(iniListaAuxAux);
+				iniListaAuxAux = iniListaAux;
+			}
+		} 		
+}
+
+void mostrarRespuestas(){
+	respuestas *aux = NULL;
+	if(inicioRespuestas != NULL){
+			aux = inicioRespuestas;
+		do
+		{
+			printf("Respuesta con el id: %d. '%s'. Numero de respuesta: %d, a la pregunta: %d. Pondera con: %.2f\n", aux->respuesta_id, aux->respuesta, aux->respuesta_nro, aux->pregunta_id, aux->ponderacion);
+			aux = aux->sgte;
+		} while (aux != inicioRespuestas);
+	} else printf("No hay ninguna respuesta cargada en el sistema\n");	
+	
+}
+
+void eliminarRespuestas(){
+	respuestas *bor = NULL, *ant = NULL, *ultimo = NULL;
+	int borrar, num, borrado=0;
+
+	printf("Ingrese el id de la pregunta a la que le desea borrar las respuestas\n");
+	scanf("%d", &num);
+
+	if(inicioRespuestas != NULL){
+		bor = inicioRespuestas;
+		borrar = 0;
+		buscarBorrar(num, &bor, &ant, &borrar);
+
+		while(bor != inicioRespuestas){
+			if(bor->pregunta_id == num){
+				ant->sgte = bor->sgte;
+				bor->sgte = NULL;
+				free(bor);
+				bor = ant->sgte;
+				borrado = 1;
+			} else bor = bor->sgte;
+		}
+		
+
+		if(bor->pregunta_id == num){ //si necesitamos borrar el primero nodo que quedo solitario
+			if(inicioRespuestas->sgte == inicioRespuestas){ //condicion que analiza si hay 1 solo nodo en la lista
+				inicioRespuestas = NULL;
+				ant = NULL;
+				free(bor);
+				bor = NULL;
+				borrado = 1;
+			}
+			else{
+				ultimo = inicioRespuestas;
+				while(ultimo->sgte != inicioRespuestas){
+					ultimo = ultimo->sgte; //busco el ultimo nodo para engancharlo al comienzo despues
+				}
+				inicioRespuestas = inicioRespuestas->sgte; //cambio el inicio de la lista para poder borrar el primer nodo
+				ultimo->sgte = inicioRespuestas; //el ulitmo nodo apunta al inicio de vuelta
+				bor->sgte = NULL;
+				ant = NULL;
+				free(bor); //libero el primer nodo
+				bor = NULL;
+				borrado = 1;
+			}
+		}
+		if(borrado){
+			printf("Se borraron las respuestas exitosamente\n");
+		} else printf("El id a borrar no existe");
+	} 	else printf("No hay nada para borrar la lista esta vacia\n");
+} 
+
+void buscarBorrar(int num, respuestas **rc, respuestas **ant, int *borrar){
+	respuestas *aux;
+	(*ant) = (*rc);
+	aux = (*rc);
+	(*rc) = (*rc)->sgte;
+	while((*rc) != aux && *borrar != 1){
+			if((*rc)->pregunta_id == num){
+				*borrar = 1;
+			} else{
+				(*ant) = (*rc);
+				(*rc) = (*rc)->sgte;
+			}
+	}
+}
+
 
 
 //sin modificaion de preguntas ni de respuestas!!!!
