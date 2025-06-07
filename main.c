@@ -22,7 +22,7 @@ typedef struct encuestas{
 }encuestas;
 
 typedef struct preguntas{
-    struct encuestas *encuesta_id;
+    int encuesta_id;
     int pregunta_id;
     char pregunta[100];
     float ponderacion;
@@ -116,9 +116,11 @@ int main() {
 }
 
 void desapilar(encuestas **tope, encuestas **nodo_desapilado){
-    (*nodo_desapilado) = (*tope);
-    (*tope) = (*tope)->sgte;
-    (*nodo_desapilado)->sgte = NULL;
+    if((*tope) != NULL){
+        (*nodo_desapilado) = (*tope);
+        (*tope) = (*tope)->sgte;
+        (*nodo_desapilado)->sgte = NULL;
+    }
 }
 
 void apilar(encuestas **tope, encuestas **nv){
