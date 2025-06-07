@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <limits.h>
 
 // Función portable para limpiar pantalla
 void clear_screen() {
