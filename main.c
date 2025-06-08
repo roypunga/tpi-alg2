@@ -31,7 +31,7 @@ typedef struct preguntas{
 }preguntas;
 
 typedef struct respuestas{
-    struct preguntas *pregunta_id;
+    int pregunta_id;
     int respuesta_id;
     int respuesta_nro;
     char respuesta[100];
@@ -58,9 +58,9 @@ typedef struct encuestaRespondidas{
 void menu_encuestas(encuestas **tope);
 void menu_preguntas();
 void menu_respuestas();
-void menu_administrador(encuestas **tope);
+void menu_administrador(encuestas **tope, sEncuestador** listaEncuestadores);
 void menu_encuestador();
-void menu_AdmEncuestadores();
+void menu_AdmEncuestadores(sEncuestador** listaEncuestadores);
 void mostrar_encuesta(encuestas **tope,int interactivo);
 void crear_encuesta(encuestas **tope);
 void eliminar_encuesta(encuestas **tope);
@@ -76,6 +76,7 @@ void crearRespuesta();
 void mostrarRespuestas();
 void eliminarRespuestas();
 void buscarBorrar(int num, respuestas **, respuestas **, int *);
+void mostrarEncuestadores(sEncuestador* actual); 
 
 //Prueba de pasar el tope desde main hasta crear_encuesta 
 int main() {
@@ -99,7 +100,7 @@ int main() {
 
         if(control == 2){
             clear_screen();
-            menu_administrador(&tope);
+            menu_administrador(&tope, &listaEncuestadores);
         }
         if(control == 1){
             clear_screen();
@@ -172,7 +173,7 @@ int login(struct sEncuestador* lista){
     return retorno;
 }
 
-void menu_administrador(encuestas **tope){
+void menu_administrador(encuestas **tope, sEncuestador** listaEncuestadores){
        int opcion;
     
     do {
@@ -204,7 +205,7 @@ void menu_administrador(encuestas **tope){
                 break;
             case 4:
                 clear_screen();
-                menu_AdmEncuestadores();
+                menu_AdmEncuestadores(listaEncuestadores);
                 break;
             case 0:
                 printf("Cerrando sesion...\n");
@@ -219,7 +220,7 @@ void menu_administrador(encuestas **tope){
     } while (opcion != 0);
 }
 
-void menu_AdmEncuestadores(){
+void menu_AdmEncuestadores(sEncuestador** listaEncuestadores){
 int opcion;
     
     do {
@@ -238,12 +239,12 @@ int opcion;
         
         switch(opcion) {
             case 1:
-                //
+                agregarEncuestador(listaEncuestadores);
                 clear_screen();
                 break;
             case 2:
-                //
                 clear_screen();
+                mostrarEncuestadores((*listaEncuestadores));
                 break;
             case 3:
                 //
@@ -848,6 +849,25 @@ void limpiarBuffer() {
     }
 }
 
+void mostrarEncuestadores(sEncuestador* actual) {
+    
+    printf("Lista de encuestadores:\n");
+    printf("-----------------------\n");
+    
+    
+    if (actual == NULL) {
+        printf("La lista está vacía.\n");
+    }
+    while (actual != NULL) {
+        printf("ID: %d\n", actual->encuestador_id);
+        printf("Nombre: %s\n", actual->nombre);
+        printf("Password: %s\n", actual->pass);
+        printf("-----------------------\n");
+        
+        actual = actual->sgte;  // Avanzar al siguiente nodo
+    }
+}
+
 void agregarEncuestador(sEncuestador** lista) {
     // Crear nuevo nodo
     sEncuestador* nuevo = (sEncuestador*)malloc(sizeof(sEncuestador));
@@ -856,24 +876,23 @@ void agregarEncuestador(sEncuestador** lista) {
         return;
     }
 
-    // Calcular el nuevo ID (máximo ID existente + 1)
-    int max_id = 0;
-    sEncuestador* actual = *lista;
-    
-    while (actual != NULL) {
-        if (actual->encuestador_id > max_id) {
-            max_id = actual->encuestador_id;
-        }
-        actual = actual->sgte;
-    }
-    
-
     char nombre[30], pass[15];
-    int lectura_correcta;
+    int lectura_correcta, id;
 
     do {
         printf("Ingrese el nombre del encuestador (sin espacios, max 29 chars): ");
         lectura_correcta = scanf("%29s", nombre);  // %29s para dejar espacio para el '\0'
+        limpiarBuffer();
+        if (lectura_correcta != 1) {
+            printf("Error en la lectura. ");
+        }
+    } while (lectura_correcta != 1);
+
+
+    // Lectura de id
+    do {
+        printf("Ingrese el id del encuestador: ");
+        lectura_correcta = scanf("%d", &id);  // %14s para dejar espacio para el '\0'
         limpiarBuffer();
         if (lectura_correcta != 1) {
             printf("Error en la lectura. ");
@@ -891,7 +910,7 @@ void agregarEncuestador(sEncuestador** lista) {
     } while (lectura_correcta != 1);
 
     // Configurar el nuevo nodo
-    nuevo->encuestador_id = max_id + 1;
+    nuevo->encuestador_id = id;
     strcpy(nuevo->nombre, nombre);
     strcpy(nuevo->pass, pass);
 
