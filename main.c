@@ -86,7 +86,7 @@ void eliminarPregunta(preguntas** Ini, int idEncuesta);
 // Funciones para CRUD de respuestas
 void crearRespuesta();
 void mostrarRespuestas();
-void eliminarRespuestas();
+void eliminarRespuestas(int);
 void buscarBorrar(int num, respuestas **, respuestas **, int *);
 void mostrarEncuestadores(sEncuestador* actual); 
 
@@ -444,7 +444,7 @@ void menu_preguntas(encuestas* tope) {
 
 void menu_respuestas() {
     int opcion;
-    
+    int num;
     do {
         printf("=================================\n");
         printf("         MENU RESPUESTAS         \n");
@@ -474,7 +474,11 @@ void menu_respuestas() {
                 clear_screen();
                 break;
             case 4:
-                eliminarRespuestas();
+
+                printf("Ingrese el id de la pregunta a la que le desea borrar las respuestas\n");
+	            scanf("%d", &num);
+
+                eliminarRespuestas(num);
                 clear_screen();
                 break;
             case 5:
@@ -741,6 +745,7 @@ void eliminar_encuesta(encuestas **tope) {
                 confirmacion = buffer[0];
                 
                 if (confirmacion == 's' || confirmacion == 'S') {
+                    eliminarPregunta(&inicioPreguntas, nodo_eliminar->encuesta_id);
                     free(nodo_eliminar);
                     printf("\nEncuesta eliminada con exito.\n");
                 } else {
@@ -1079,12 +1084,9 @@ void mostrarRespuestas(){
 	
 }
 
-void eliminarRespuestas(){
+void eliminarRespuestas(int num){
 	respuestas *bor = NULL, *ant = NULL, *ultimo = NULL;
-	int borrar, num, borrado=0;
-
-	printf("Ingrese el id de la pregunta a la que le desea borrar las respuestas\n");
-	scanf("%d", &num);
+	int borrar, borrado=0;
 
 	if(inicioRespuestas != NULL){
 		bor = inicioRespuestas;
@@ -1294,8 +1296,13 @@ void eliminarPregunta(preguntas** Ini, int idEncuesta) {
     preguntas* actual = *Ini;
     preguntas* anterior = NULL;
 
+    
+
     while (actual != NULL) {
         if (actual->encuesta_id == idEncuesta) {
+            
+            eliminarRespuestas(actual->pregunta_id);
+
             preguntas* aBorrar = actual;
 
             if (anterior == NULL) {
