@@ -22,7 +22,7 @@ typedef struct encuestas{
 }encuestas;
 
 typedef struct preguntas{
-    struct encuestas *encuesta_id;
+    int encuesta_id;
     int pregunta_id;
     char pregunta[100];
     float ponderacion;
@@ -54,12 +54,14 @@ typedef struct encuestaRespondidas{
     struct encuestaRespondidas *sgte;
 }encuestaRespondidas;
 
+//Funciones de menu y login
 void menu_encuestas(encuestas **tope);
-void menu_preguntas();
+void menu_preguntas(encuestas* tope);
 void menu_respuestas();
 void menu_administrador(encuestas **tope);
 void menu_encuestador();
 void menu_AdmEncuestadores();
+// Funciones de manejo de encuestas
 void mostrar_encuesta(encuestas **tope,int interactivo);
 void crear_encuesta(encuestas **tope);
 void eliminar_encuesta(encuestas **tope);
@@ -71,11 +73,22 @@ bool idExiste(encuestas *tope, int id);
 int leerNumeroValidado(const char *mensaje, const char *mensajeError, int min, int max, bool validarUnico, encuestas **tope);
 void agregarEncuestador(sEncuestador** lista);
 void limpiarBuffer();
+
+
+// Funciones para CRUD de preguntas
+void insertarInicio(preguntas** Ini, preguntas*nodo);
+int obtenerIdPregunta(preguntas* InicioLista);
+void crearPregunta(encuestas* topePila);
+void mostrarPreguntas(int idEncuesta);
+void eliminarPregunta(preguntas** Ini, int idEncuesta);
+
+// Funciones para CRUD de respuestas
 void crearRespuesta();
 void mostrarRespuestas();
 void eliminarRespuestas();
 void buscarBorrar(int num, respuestas **, respuestas **, int *);
 
+preguntas* inicioPreguntas = NULL; //puntero de manera global para la lista enlazada simple
 //Prueba de pasar el tope desde main hasta crear_encuesta 
 int main() {
     sEncuestador* listaEncuestadores = NULL;
@@ -193,7 +206,7 @@ void menu_administrador(encuestas **tope){
                 break;
             case 2:
                 clear_screen();
-                menu_preguntas();
+                menu_preguntas(*tope);
                 break;
             case 3:
                 clear_screen();
@@ -376,8 +389,8 @@ void menu_encuestas(encuestas **tope) {
     } while (opcion != 0);
 }
 
-void menu_preguntas() {
-    int opcion;
+void menu_preguntas(encuestas* tope) {
+    int opcion, idMostrar;
     
     do {
         printf("=================================\n");
@@ -395,19 +408,23 @@ void menu_preguntas() {
         
         switch(opcion) {
             case 1:
-                //crear pregunta
-                clear_screen();
+                crearPregunta(tope);
+                //clear_screen();
                 break;
             case 2:
-                //mostrar preguntas
-                clear_screen();
+				printf("Ingrese el ID de la encuesta para mostrar sus preguntas: ");
+				scanf("%d", &idMostrar);
+				mostrarPreguntas(idMostrar);
+                //clear_screen();
                 break;
             case 3:
                 //actualizar pregunta
                 clear_screen();
                 break;
             case 4:
-                //eliminar pregunta
+				printf("Ingrese el ID de la encuesta para eliminar sus preguntas: ");
+				scanf("%d", &idMostrar);
+                eliminarPregunta(&inicioPreguntas, idMostrar);
                 clear_screen();
                 break;
             case 0:
@@ -1105,7 +1122,177 @@ void buscarBorrar(int num, respuestas **rc, respuestas **ant, int *borrar){
 	}
 }
 
+//CRUD PREGUNTAS --------------->
 
+void insertarInicio(preguntas** Ini, preguntas* nodo) {
+    nodo->sgte = *Ini;
+	*Ini = nodo;
+}
+
+int obtenerIdPregunta(preguntas* inicio) {
+    int Id = 0;
+    while (inicio != NULL) {
+        if (inicio->pregunta_id > Id) {
+            Id = inicio->pregunta_id;
+        }
+        inicio = inicio->sgte;
+    }
+    return Id + 1;
+}
+
+void crearPregunta(encuestas* topePila) {
+#define EPSILON 0.00001 // Para comparar flotantes con precisión
+    preguntas* ini = inicioPreguntas, * iniListaAux = inicioPreguntas;
+    encuestas* topeAux = topePila, * nodoAux;
+	int idEncuesta, idPregunta, parar=1, verificar = 0, procesada=1/*usa la logica inversa que la struct encuesta 1=no 0=si*/, ERROR = 1, valido=1;
+    char pregunta[100];
+    float ponderacionDisponible = 1, ponderacionPregunta;
+
+    printf("\nCONSIDERACIONES============================ \nA CONTINUACION INTRODUCIRA 1 MIENTRAS QUIERA SEGUIR CARGANDO PREGUNTAS, -1 PARA SALIR\nDISPONDRA DE 1 PUNTO QUE DBERA REPARTIR ENTRE TODAS LAS PREGUNTAS QUE CREE\nSI TODAS LAS PREGUNTAS NO SUMAN 1, SERAN BORRADAS\n ");
+
+    do {
+        iniListaAux = inicioPreguntas;
+		procesada = 1; // Reiniciar procesada para cada encuesta
+        printf("Ingrese el id de la encuesta a la que desea agregarle preguntas, -1 para salir\n");
+        scanf_s("%d", &idEncuesta);
+
+		if ((idExiste(topePila, idEncuesta) == 0)&&(idEncuesta!=-1)){
+			printf("\nERROR: El id de encuesta ingresado no existe\n");
+        }
+        else {
+            if (idEncuesta != -1) {
+                // verificar que no se haya procesado dicha encuesta:
+                while ((!vacia(&topeAux)) && procesada == 1) {
+
+                    desapilar(&topeAux, &nodoAux);
+
+                    if (nodoAux->encuesta_id == idEncuesta) {
+
+                        if (nodoAux->procesada == 1) {
+                            printf("\nERROR: No se pueden agregar preguntas a una encuesta procesada\n");
+                            procesada = 0; // Encuesta ya procesada, no se pueden agregar preguntas
+                        }
+
+                    }
+
+                }// esto no se si anda, en teoria si pero no tengo como testear con el procesado
+                //verificar si ya no se le cargaron preguntas previamente
+                while (iniListaAux!=NULL){
+					if (iniListaAux->encuesta_id == idEncuesta) {
+						printf("\nERROR: Ya se han cargado preguntas a esta encuesta\n");
+						procesada = 0; // encuesta ya tiene preguntas, no se pueden agregar mas
+					}
+					iniListaAux = iniListaAux->sgte;
+                }
+                if (procesada == 1) {
+                    ponderacionDisponible = 1; // reiniciar ponderacion disponible para cada encuesta
+                    do {
+                        if (ponderacionDisponible == 1) {
+                            printf("\nTe equivocaste? 1 Para salir, 0 para cargar");
+                            scanf("%d", &ERROR);
+                            if (ERROR == 1) {
+                                ponderacionDisponible = 0;
+                            }
+                        }
+                        if(ERROR!=1){
+                            preguntas* nuevaPreg = (preguntas*)malloc(sizeof(preguntas));
+                            if (nuevaPreg == NULL) {
+                                printf("No hay espacio en memoria\n");
+                            }
+                            else {
+                                idPregunta = obtenerIdPregunta(inicioPreguntas); //funcion para sacar id de forma automatica (bien wacho turbo chispa)
+                                printf("id de pregunta: %d\n", idPregunta);
+                                //limpiarBuffer(); no se porq a veces hay q dar enter en tiempo de ejecucion aca
+                                nuevaPreg->pregunta_id = idPregunta;
+                                nuevaPreg->encuesta_id = idEncuesta;
+                                limpiarBuffer();
+                                printf("Ingrese la pregunta que desea agregar\n");
+                                if (fgets(nuevaPreg->pregunta, sizeof(nuevaPreg->pregunta), stdin) != NULL) {
+                                    nuevaPreg->pregunta[strcspn(nuevaPreg->pregunta, "\n")] = '\0';
+                                }
+                                printf("Ingrese la ponderacion de la pregunta, ponderacion disponible: %.2f\n", ponderacionDisponible);
+                                scanf("%f", &ponderacionPregunta);
+                                limpiarBuffer();
+
+                                do {
+
+                                    if (ponderacionPregunta < EPSILON || ponderacionPregunta > ponderacionDisponible) {
+                                        printf("ERROR: La ponderacion ingresada debe ser entre 0 y %.2f, ingrese otra: \n", ponderacionDisponible);
+                                        scanf("%f", &ponderacionPregunta);
+                                        limpiarBuffer();
+                                    }
+
+                                } while (ponderacionPregunta < EPSILON || ponderacionPregunta > ponderacionDisponible);
+
+
+                                ponderacionDisponible -= ponderacionPregunta;
+
+                                nuevaPreg->ponderacion = ponderacionPregunta;
+
+                                insertarInicio(&inicioPreguntas, nuevaPreg); //funcion para insertar en la lista enlazada simple
+
+                            }
+                        }
+                    } while (ponderacionDisponible > EPSILON);
+                }
+            }
+        }
+        /*prinf("=================================\nIngrese otro ID de encuesta o -1 para salir");
+		scanf("%d", &idEncuesta);*/
+	} while (idEncuesta != -1);
+
+}
+
+void mostrarPreguntas(int idEncuesta) {
+	preguntas* aux = inicioPreguntas;
+	int contador = 0;
+	if (aux == NULL) {
+		printf("No hay preguntas cargadas.\n");
+		return;
+    }
+    else {
+        printf("=================================\n");
+        printf("          PREGUNTAS DE LA ENCUESTA ID %d\n", idEncuesta);
+        printf("=================================\n");
+        while (aux != NULL) {
+            if (aux->encuesta_id == idEncuesta) {
+                printf("Pregunta ID: %d\n", aux->pregunta_id);
+                printf("Pregunta: %s\n", aux->pregunta);
+                printf("Ponderacion: %.2f\n", aux->ponderacion);
+                contador++;
+            }
+            aux = aux->sgte;
+        }
+    }
+	printf("\nTotal de preguntas: %d\n", contador);
+}
+
+void eliminarPregunta(preguntas** Ini, int idEncuesta) {
+    preguntas* actual = *Ini;
+    preguntas* anterior = NULL;
+
+    while (actual != NULL) {
+        if (actual->encuesta_id == idEncuesta) {
+            preguntas* aBorrar = actual;
+
+            if (anterior == NULL) {
+                // el nodo es el primero de la lista
+                *Ini = actual->sgte;
+            }
+            else {
+                // el medio o el final
+                anterior->sgte = actual->sgte;
+            }
+
+            actual = actual->sgte;
+            free(aBorrar);
+        }
+        else {
+            anterior = actual;
+            actual = actual->sgte;
+        }
+    }
+}
 
 //sin modificaion de preguntas ni de respuestas!!!!
 //validador de respuestas -> es recorrido -> controla que todas las encuestas esten completas
