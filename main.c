@@ -61,7 +61,7 @@ void menu_preguntas(encuestas* tope);
 void menu_respuestas();
 void menu_administrador(encuestas **tope, sEncuestador** listaEncuestadores);
 void menu_encuestador();
-void menu_AdmEncuestadores();
+void menu_AdmEncuestadores(sEncuestador** listaEncuestadores);
 // Funciones de manejo de encuestas
 void mostrar_encuesta(encuestas **tope,int interactivo);
 void crear_encuesta(encuestas **tope);
@@ -418,6 +418,7 @@ void menu_preguntas(encuestas* tope) {
             case 2:
 				printf("Ingrese el ID de la encuesta para mostrar sus preguntas: ");
 				scanf("%d", &idMostrar);
+                clear_screen();
 				mostrarPreguntas(idMostrar);
                 //clear_screen();
                 break;
@@ -461,19 +462,19 @@ void menu_respuestas() {
         
         switch(opcion) {
             case 1:
-                //crear respuesta
+                crearRespuesta();
                 clear_screen();
                 break;
             case 2:
-                //mostrar respuestas
                 clear_screen();
+                mostrarRespuestas();
                 break;
             case 3:
                 //actualizar respuesta
                 clear_screen();
                 break;
             case 4:
-                //eliminar respuesta
+                eliminarRespuestas();
                 clear_screen();
                 break;
             case 5:
@@ -1176,7 +1177,7 @@ void crearPregunta(encuestas* topePila) {
         iniListaAux = inicioPreguntas;
 		procesada = 1; // Reiniciar procesada para cada encuesta
         printf("Ingrese el id de la encuesta a la que desea agregarle preguntas, -1 para salir\n");
-        scanf_s("%d", &idEncuesta);
+        scanf("%d", &idEncuesta);
 
 		if ((idExiste(topePila, idEncuesta) == 0)&&(idEncuesta!=-1)){
 			printf("\nERROR: El id de encuesta ingresado no existe\n");
