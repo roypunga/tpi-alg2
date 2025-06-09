@@ -1168,7 +1168,7 @@ int obtenerIdPregunta(preguntas* inicio) {
 void crearPregunta(encuestas* topePila) {
 #define EPSILON 0.00001 // Para comparar flotantes con precisión
     preguntas* ini = inicioPreguntas, * iniListaAux = inicioPreguntas;
-    encuestas* topeAux = topePila, * nodoAux;
+    encuestas* topeAux = NULL, * nodoAux = NULL;
 	int idEncuesta, idPregunta, parar=1, verificar = 0, procesada=1/*usa la logica inversa que la struct encuesta 1=no 0=si*/, ERROR = 1, valido=1;
     char pregunta[100];
     float ponderacionDisponible = 1, ponderacionPregunta;
@@ -1187,9 +1187,9 @@ void crearPregunta(encuestas* topePila) {
         else {
             if (idEncuesta != -1) {
                 // verificar que no se haya procesado dicha encuesta:
-                while ((!vacia(&topeAux)) && procesada == 1) {
+                while ((!vacia(&topePila)) && procesada == 1) {
 
-                    desapilar(&topeAux, &nodoAux);
+                    desapilar(&topePila, &nodoAux);
 
                     if (nodoAux->encuesta_id == idEncuesta) {
 
@@ -1200,7 +1200,17 @@ void crearPregunta(encuestas* topePila) {
 
                     }
 
+					apilar(&topeAux, &nodoAux); // Volver a apilar el nodo para no perder la pila original
+
                 }// esto no se si anda, en teoria si pero no tengo como testear con el procesado
+
+				while (!vacia(&topeAux)) {
+
+					desapilar(&topeAux, &nodoAux);
+					apilar(&topePila, &nodoAux); // Restaurar la pila original
+				
+                }
+                
                 //verificar si ya no se le cargaron preguntas previamente
                 while (iniListaAux!=NULL){
 					if (iniListaAux->encuesta_id == idEncuesta) {
