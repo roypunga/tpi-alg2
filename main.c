@@ -89,6 +89,7 @@ void mostrarRespuestas();
 void eliminarRespuestas(int);
 void buscarBorrar(int num, respuestas **, respuestas **, int *);
 void mostrarEncuestadores(sEncuestador* actual); 
+int verificarIdPregunta(int num, preguntas **);
 
 preguntas* inicioPreguntas = NULL; //puntero de manera global para la lista enlazada simple
 //Prueba de pasar el tope desde main hasta crear_encuesta 
@@ -959,8 +960,11 @@ void crearRespuesta(){
 	scanf("%d",&num);
 	printf("num leido: %d\n", num);
 
-	//verificar = verificarPregunta(num /*puntero al incio de la lista enlazada simple*/);
-	if(verificar == 1){
+	verificar = verificarIdPregunta(num, &inicioPreguntas);
+
+    printf("VERIFICAR DESPUES DE LA FUNCION BUSCAR ID-------> %d", verificar);
+
+	if(verificar != 1){
 		printf("El id de la respuesta ingresada no existe\n");
 	}
 		else { 
@@ -1024,20 +1028,20 @@ void crearRespuesta(){
 				while(getchar() != '\n'); // Limpiar buffer
 
 			} while(parar != 0);	
-		}   
-	
-	//verificamos si hay alguna respuesta que valga 1
-	verificar = 0;
-	iniListaAuxAux = iniListaAux;
-	if(iniListaAuxAux->sgte == NULL){
-		if(iniListaAuxAux->ponderacion == 1){
-			verificar = 1;
-		} }
+
+            //verificamos si hay alguna respuesta que valga 1
+	    verificar = 0;
+	    iniListaAuxAux = iniListaAux;
+	    if(iniListaAuxAux->sgte == NULL){
+		    if(iniListaAuxAux->ponderacion == 1){
+			    verificar = 1;
+		    } 
+        }
 		else {
 			while(iniListaAuxAux->sgte != NULL){
-			if(iniListaAuxAux->ponderacion == 1){
-				verificar = 1;
-			} 
+			    if(iniListaAuxAux->ponderacion == 1){
+				    verificar = 1;
+			    } 
 				iniListaAuxAux = iniListaAuxAux->sgte;
 			}
 			if(iniListaAuxAux->ponderacion == 1){
@@ -1045,14 +1049,14 @@ void crearRespuesta(){
 			} 
 		}
 	
-	//enlazamos la lista simple auxiliar a la lista circular principal
-	if(verificar == 1 && inicioRespuestas == NULL){
-		inicioRespuestas = iniListaAux;
-		iniListaAux = NULL;
-		iniListaAuxAux->sgte = inicioRespuestas;
-		iniListaAuxAux = NULL;
-		printf("Respuestas cargadas con exito\n");
-	}
+	    //enlazamos la lista simple auxiliar a la lista circular principal
+	    if(verificar == 1 && inicioRespuestas == NULL){
+		    inicioRespuestas = iniListaAux;
+		    iniListaAux = NULL;
+		    iniListaAuxAux->sgte = inicioRespuestas;
+		    iniListaAuxAux = NULL;
+		    printf("Respuestas cargadas con exito\n");
+	    }
 		else if(verificar == 1 && inicioRespuestas != NULL){
 			ini->sgte = iniListaAux;
 			iniListaAux = NULL;
@@ -1069,6 +1073,20 @@ void crearRespuesta(){
 				iniListaAuxAux = iniListaAux;
 			}
 		} 		
+	}  
+}
+
+int verificarIdPregunta(int num, preguntas **inicioPreguntas){
+    preguntas *aux = NULL;
+    int verificar = 0;
+    aux = (*inicioPreguntas);
+    while ((aux != NULL) && (verificar != 1))
+    {
+        if(aux->pregunta_id == num){
+            verificar = 1;
+        } else aux = aux->sgte;
+    }
+    return verificar;
 }
 
 void mostrarRespuestas(){
