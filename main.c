@@ -46,21 +46,22 @@ typedef struct sEncuestador{
 }sEncuestador;
 
 typedef struct encuestaRespondidas{
-    struct encuestas *encuesta_id;
+    int encuesta_id;
     struct preguntas *pregunta_id;
     struct respuestas *respuesta_id;
     int fecha_realizacion;
-    struct encuestador *encuestador_id;
+    sEncuestador *encuestador_id;
     int encuestarResondida_id;
     struct encuestaRespondidas *sgte;
 }encuestaRespondidas;
+
 
 //Funciones de menu y login
 void menu_encuestas(encuestas **tope);
 void menu_preguntas(encuestas* tope);
 void menu_respuestas();
 void menu_administrador(encuestas **tope, sEncuestador** listaEncuestadores);
-void menu_encuestador();
+void menu_encuestador(encuestas** tope, sEncuestador* listaEncuestadores, encuestaRespondidas* listaRespondidas);
 void menu_AdmEncuestadores(sEncuestador** listaEncuestadores);
 // Funciones de manejo de encuestas
 void mostrar_encuesta(encuestas **tope,int interactivo);
@@ -74,6 +75,23 @@ bool idExiste(encuestas *tope, int id);
 int leerNumeroValidado(const char *mensaje, const char *mensajeError, int min, int max, bool validarUnico, encuestas **tope);
 void agregarEncuestador(sEncuestador** lista);
 void limpiarBuffer();
+
+
+// Funciones de csv
+encuestaRespondidas* cargarEncuestasRespondidas(
+    encuestaRespondidas* lista, 
+    sEncuestador* listaEncuestadores,
+    encuestas** topePila
+);
+preguntas* buscarPregunta(int id_pregunta);
+respuestas* buscarRespuesta(int id_respuesta);
+sEncuestador* buscarEncuestador(sEncuestador* lista, int id);
+void mostrarEncuestasRespondidas(encuestaRespondidas* lista);
+
+// Funciones para cargar datos de ejemplo
+void agregarPregunta(int encuesta_id, int pregunta_id, const char* pregunta, float ponderacion);
+void agregarRespuesta(int pregunta_id, int respuesta_id, int respuesta_nro, const char* respuesta, float ponderacion);
+void cargarDatosEjemplo(encuestas** topeEncuestas);
 
 
 // Funciones para CRUD de preguntas
@@ -96,18 +114,23 @@ preguntas* inicioPreguntas = NULL; //puntero de manera global para la lista enla
 int main() {
     sEncuestador* listaEncuestadores = NULL;
     encuestas *tope = NULL;
+    encuestaRespondidas* listaRespondidas;
 
     int control;
 
     //carga de un encuestador para prueba
     struct sEncuestador* nodo = NULL;
     nodo = malloc(sizeof(struct sEncuestador));
-    nodo->encuestador_id = 10;
+    nodo->encuestador_id = 9999;
     strcpy(nodo->nombre, "Garrafa Sanchez");
     strcpy(nodo->pass, "taladro10");
     nodo->sgte = NULL;
     listaEncuestadores = nodo;
     nodo = NULL;
+
+
+    //carga de datos de ejemplo
+    cargarDatosEjemplo(&tope);
     
     do{
         control = login(listaEncuestadores);
@@ -118,7 +141,8 @@ int main() {
         }
         if(control == 1){
             clear_screen();
-            menu_encuestador();
+            menu_encuestador(&tope, listaEncuestadores, listaRespondidas);
+            mostrarRespuestas();
         }
         if(control == 0){
             clear_screen();
@@ -278,7 +302,7 @@ int opcion;
     } while (opcion != 0);
 }
 
-void menu_encuestador() {
+void menu_encuestador(encuestas** tope, sEncuestador* listaEncuestadores, encuestaRespondidas* listaRespondidas) {
     int opcion;
     
     do {
@@ -287,7 +311,7 @@ void menu_encuestador() {
         printf("=================================\n");
         printf("1. Cargar respuestas desde archivo CSV\n");
         printf("2. Ingresar respuestas manualmente\n");
-        printf("3. Mostrar todas las encuestas\n");
+        printf("3. Mostrar todos los registros csv\n");
         printf("4. Mostrar ponderaciones\n");
         printf("5. Mostrar encuesta específica (por ID)\n");
         printf("0. Volver al menu principal\n");
@@ -300,7 +324,7 @@ void menu_encuestador() {
             case 1:
                 clear_screen();
                 printf("\n--- Cargar desde CSV ---\n");
-                // Función para cargar desde CSV iría aquí
+                listaRespondidas = cargarEncuestasRespondidas(listaRespondidas, listaEncuestadores, tope);
                 break;
             case 2:
                 clear_screen();
@@ -310,7 +334,7 @@ void menu_encuestador() {
             case 3:
                 clear_screen();
                 printf("\n--- Todas las encuestas ---\n");
-                // Función para mostrar todas las encuestas iría aquí
+                mostrarEncuestasRespondidas(listaRespondidas);
                 break;
             case 4:
                 clear_screen();
@@ -1351,6 +1375,330 @@ void eliminarPregunta(preguntas** Ini, int idEncuesta) {
         }
     }
 }
+
+
+//------------------------------------------------------------------------------------------------
+//-------------------------------------------CSV--------------------------------------------------
+//------------------------------------------------------------------------------------------------
+
+// Funciones auxiliares
+preguntas* buscarPregunta(int id_pregunta) {
+    preguntas* actual = inicioPreguntas;
+    while (actual != NULL) {
+        if (actual->pregunta_id == id_pregunta) {
+            return actual;
+        }
+        actual = actual->sgte;
+    }
+    return NULL;
+}
+
+respuestas* buscarRespuesta(int id_respuesta) {
+    if (inicioRespuestas == NULL) return NULL;
+    
+    respuestas* actual = inicioRespuestas;
+    do {
+        if (actual->respuesta_id == id_respuesta) {
+            return actual;
+        }
+        actual = actual->sgte;
+    } while (actual != inicioRespuestas && actual != NULL);
+    
+    return NULL;
+}
+
+sEncuestador* buscarEncuestador(sEncuestador* lista, int id) {
+    sEncuestador* actual = lista;
+    while (actual != NULL) {
+        if (actual->encuestador_id == id) {
+            return actual;
+        }
+        actual = actual->sgte;
+    }
+    return NULL;
+}
+
+// Función principal
+encuestaRespondidas* cargarEncuestasRespondidas(
+    encuestaRespondidas* lista, 
+    sEncuestador* listaEncuestadores,
+    encuestas **tope
+) {
+
+    FILE *archivo = fopen("resultados.csv", "r");
+    if (archivo == NULL) {
+        perror("Error al abrir el archivo");
+        return lista;
+    }
+
+    char linea[51]; // 50 caracteres + null terminator
+    int contadorLinea = 0;
+
+    while (fgets(linea, sizeof(linea), archivo)) {
+        contadorLinea++;
+        size_t len = strlen(linea);
+        
+        // elimina el salto de linea del final
+        //lo de \r no estoy seguro q es me lo tiro la IA dice que podia ser lo q me estaba dando un error, lo dejo por las dudas....
+        while (len > 0 && (linea[len-1] == '\n' || linea[len-1] == '\r')) {
+            linea[len-1] = '\0';
+            len--;
+        }
+
+        // si la lina esta vacia saltea la iteracion del loop
+        if (len == 0) {
+            continue; 
+        }
+
+        // validar longitud
+        if (len != 50) {
+            printf("Error línea %d: Longitud incorrecta (%zu caracteres): '%.20s%s'\n", 
+                    contadorLinea, len, 
+                    linea,
+                    (len > 20) ? "..." : "");
+            continue;
+        }
+
+        // extraer los datos
+        char str_encuesta_id[7] = {0};
+        char str_pregunta_id[9] = {0};
+        char str_respuesta_id[13] = {0};
+        char str_fecha[9] = {0};
+        char str_encuestador[5] = {0};
+        char str_encuestaRes_id[13] = {0};
+
+        strncpy(str_encuesta_id, linea, 6);
+        strncpy(str_pregunta_id, linea + 6, 8);
+        strncpy(str_respuesta_id, linea + 14, 12); // 6+8=14
+        strncpy(str_fecha, linea + 26, 8);        // 6+8+12=26
+        strncpy(str_encuestador, linea + 34, 4);  // 26+8=34
+        strncpy(str_encuestaRes_id, linea + 38, 12); // 34+4=38
+
+        // convertir a int
+        int encuesta_id = atoi(str_encuesta_id);
+        int pregunta_id = atoi(str_pregunta_id);
+        int respuesta_id = atoi(str_respuesta_id);
+        int fecha = atoi(str_fecha);
+        int encuestador_id = atoi(str_encuestador);
+        int encuestaRes_id = atoi(str_encuestaRes_id);
+
+        //comprobar si existe id
+        if(!idExiste((*tope), encuesta_id)){
+            printf("Error: Encuesta ID %d no existe\n", encuesta_id);
+            continue;
+        }
+
+
+        // buscar en las estructuras para conectar el puntero
+        preguntas* pregunta_ptr = buscarPregunta(pregunta_id);
+        if (pregunta_ptr == NULL) {
+            printf("Error: Pregunta ID %d no existe\n", pregunta_id);
+            continue;
+        }
+
+        respuestas* respuesta_ptr = buscarRespuesta(respuesta_id);
+        if (respuesta_ptr == NULL) {
+            printf("Error: Respuesta ID %d no existe\n", respuesta_id);
+            continue;
+        }
+
+        sEncuestador* encuestador_ptr = buscarEncuestador(listaEncuestadores, encuestador_id);
+        if (encuestador_ptr == NULL) {
+            printf("Error: Encuestador ID %d no existe\n", encuestador_id);
+            continue;
+            continue;
+        }
+
+        // Crear nuevo nodo
+        encuestaRespondidas* nuevo = (encuestaRespondidas*)malloc(sizeof(encuestaRespondidas));
+        if (nuevo == NULL) {
+            printf("Error de memoria\n");
+            fclose(archivo);
+            return lista;
+        }
+
+        // Asignar valores
+        nuevo->encuesta_id = encuesta_id;
+        nuevo->pregunta_id = pregunta_ptr;
+        nuevo->respuesta_id = respuesta_ptr;
+        nuevo->fecha_realizacion = fecha;
+        nuevo->encuestador_id = encuestador_ptr;
+        nuevo->encuestarResondida_id = encuestaRes_id;
+        nuevo->sgte = NULL;
+
+        // Insertar en la lista
+        if (lista == NULL) {
+            lista = nuevo;
+        } else {
+            encuestaRespondidas* actual = lista;
+            while (actual->sgte != NULL) {
+                actual = actual->sgte;
+            }
+            actual->sgte = nuevo;
+        }
+    }
+
+    fclose(archivo);
+    return lista;
+}
+
+void mostrarEncuestasRespondidas(encuestaRespondidas* lista) {
+    if (lista == NULL) {
+        printf("La lista de encuestas respondidas está vacía.\n");
+        return;
+    }
+    
+    printf("================================================================================\n");
+    printf("                    LISTADO DE ENCUESTAS RESPONDIDAS\n");
+    printf("================================================================================\n");
+    
+    encuestaRespondidas* actual = lista;
+    int contador = 0;
+    
+    while (actual != NULL) {
+        contador++;
+        printf("\n--- Registro #%d ---\n", contador);
+        printf("ID Encuesta Respondida: %d\n", actual->encuestarResondida_id);
+        printf("ID Encuesta: %d\n", actual->encuesta_id);
+        
+        if (actual->pregunta_id != NULL) {
+            printf("Pregunta [%d]: %s\n", 
+                   actual->pregunta_id->pregunta_id,
+                   actual->pregunta_id->pregunta);
+        } else {
+            printf("Pregunta: [NO ENCONTRADA]\n");
+        }
+        
+        if (actual->respuesta_id != NULL) {
+            printf("Respuesta [%d]: %s\n", 
+                   actual->respuesta_id->respuesta_id,
+                   actual->respuesta_id->respuesta);
+        } else {
+            printf("Respuesta: [NO ENCONTRADA]\n");
+        }
+        
+        // Formatear fecha como AAAAMMDD
+        char fechaStr[9];
+        snprintf(fechaStr, sizeof(fechaStr), "%d", actual->fecha_realizacion);
+        
+        if (strlen(fechaStr) == 8) {
+            printf("Fecha: %.4s/%.2s/%.2s (AAAAMMDD)\n", 
+                   fechaStr, fechaStr + 4, fechaStr + 6);
+        } else {
+            printf("Fecha: %d (Formato inválido)\n", actual->fecha_realizacion);
+        }
+        
+        if (actual->encuestador_id != NULL) {
+            printf("Encuestador [%d]: %s\n", 
+                   actual->encuestador_id->encuestador_id,
+                   actual->encuestador_id->nombre);
+        } else {
+            printf("Encuestador: [NO ENCONTRADO]\n");
+        }
+        
+        actual = actual->sgte;
+    }
+    
+    printf("\n================================================================================\n");
+    printf("Total de registros: %d\n", contador);
+    printf("================================================================================\n");
+}
+
+
+//------------------------------------------------------------------------------------------------
+
+//--------------------------Funcion magica para cargar datos a las estructuras----------------------------
+
+
+void agregarPregunta(int encuesta_id, int pregunta_id, const char* pregunta, float ponderacion) {
+    preguntas* nueva = (preguntas*)malloc(sizeof(preguntas));
+    nueva->encuesta_id = encuesta_id;
+    nueva->pregunta_id = pregunta_id;
+    strcpy(nueva->pregunta, pregunta);
+    nueva->ponderacion = ponderacion;
+    nueva->sgte = NULL;
+
+    if (inicioPreguntas == NULL) {
+        inicioPreguntas = nueva;
+    } else {
+        preguntas* actual = inicioPreguntas;
+        while (actual->sgte != NULL) {
+            actual = actual->sgte;
+        }
+        actual->sgte = nueva;
+    }
+}
+
+// Función para agregar una respuesta a la lista global
+void agregarRespuesta(int pregunta_id, int respuesta_id, int respuesta_nro, const char* respuesta, float ponderacion) {
+    respuestas* nueva = (respuestas*)malloc(sizeof(respuestas));
+    nueva->pregunta_id = pregunta_id;
+    nueva->respuesta_id = respuesta_id;
+    nueva->respuesta_nro = respuesta_nro;
+    strcpy(nueva->respuesta, respuesta);
+    nueva->ponderacion = ponderacion;
+    nueva->sgte = NULL;
+
+    if (inicioRespuestas == NULL) {
+        inicioRespuestas = nueva;
+        nueva->sgte = nueva;  // Lista circular: apunta a sí misma
+    } else {
+        respuestas* actual = inicioRespuestas;
+        while (actual->sgte != inicioRespuestas) {
+            actual = actual->sgte;
+        }
+        actual->sgte = nueva;
+        nueva->sgte = inicioRespuestas;  // Cierra el círculo
+    }
+}
+
+// Función principal para cargar todos los datos
+void cargarDatosEjemplo(encuestas** topeEncuestas) {
+    // Crear y cargar encuesta
+    encuestas* nuevaEncuesta = (encuestas*)malloc(sizeof(encuestas));
+    nuevaEncuesta->encuesta_id = 15;
+    strcpy(nuevaEncuesta->denominacion, "Servicio urbano de Pasajeros");
+    nuevaEncuesta->encuesta_mes = 6;
+    nuevaEncuesta->encuesta_anio = 25;
+    nuevaEncuesta->procesada = 0;
+    
+    // Apilar encuesta
+    nuevaEncuesta->sgte = *topeEncuestas;
+    *topeEncuestas = nuevaEncuesta;
+
+    // Cargar preguntas
+    agregarPregunta(15, 325, "Como considera la puntualidad del servicio", 0.35);
+    agregarPregunta(15, 327, "Que tan limpia esta la unidad", 0.3);
+    agregarPregunta(15, 328, "que tan bueno es el trato del chofer", 0.2);
+    agregarPregunta(15, 330, "Que tan satisfecho esta con los recorridos", 0.15);
+
+    // Cargar respuestas
+    // Pregunta 325
+    agregarRespuesta(325, 1500, 1, "Muy Puntual", 1.0);
+    agregarRespuesta(325, 1501, 2, "Puntual", 0.5);
+    agregarRespuesta(325, 1503, 3, "Impuntual", 0.1);
+    
+    // Pregunta 327
+    agregarRespuesta(327, 1505, 1, "Impecable", 1.0);
+    agregarRespuesta(327, 1506, 2, "Limpio", 0.6);
+    agregarRespuesta(327, 1508, 3, "Regular", 0.3);
+    agregarRespuesta(327, 1510, 4, "Sucio", 0.0);
+    
+    // Pregunta 328
+    agregarRespuesta(328, 1511, 1, "Muy buen trato", 1.0);
+    agregarRespuesta(328, 1513, 2, "Aceptable", 0.5);
+    agregarRespuesta(328, 1518, 3, "Muy mal trato", 0.0);
+    
+    // Pregunta 330
+    agregarRespuesta(330, 1519, 1, "Totalmente satisfecho", 1.0);
+    agregarRespuesta(330, 1520, 2, "Satisfecho", 0.6);
+    agregarRespuesta(330, 1521, 3, "Insatisfecho", 0.1);
+}
+
+//--------------------------------------------------------------------------------------------------------------
+
+
+
 
 //sin modificaion de preguntas ni de respuestas!!!!
 //validador de respuestas -> es recorrido -> controla que todas las encuestas esten completas
