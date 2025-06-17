@@ -81,6 +81,7 @@ bool idExiste(encuestas *tope, int id);
 int leerNumeroValidado(const char *mensaje, const char *mensajeError, int min, int max, bool validarUnico, encuestas **tope);
 void agregarEncuestador(sEncuestador** lista);
 void limpiarBuffer();
+void mostrarEncuestasRespondidasPorID(encuestaRespondidas* listaRespondidas, encuestas** topeEncuestas);
 
 
 // Funciones de csv
@@ -325,7 +326,7 @@ void menu_encuestador(encuestas** tope, sEncuestador* listaEncuestadores, encues
         printf("2. Ingresar respuestas manualmente\n");
         printf("3. Mostrar todos los registros csv\n");
         printf("4. Mostrar ponderaciones\n");
-        printf("5. Mostrar encuesta específica (por ID)\n");
+        printf("5. Mostrar encuesta especifica (por ID)\n");
         printf("0. Volver al menu principal\n");
         printf("=================================\n");
         printf("Seleccione una opcion: ");
@@ -355,8 +356,9 @@ void menu_encuestador(encuestas** tope, sEncuestador* listaEncuestadores, encues
                 break;
             case 5:
                 clear_screen();
-                printf("\n--- Buscar por ID ---\n");
+                //printf("\n--- Buscar por ID ---\n");
                 // Función para mostrar encuesta por ID iría aquí
+                mostrarEncuestasRespondidasPorID(listaRespondidas,tope);
                 break;
             case 0:
                 clear_screen();
@@ -1792,6 +1794,193 @@ void cargarDatosEjemplo(encuestas** topeEncuestas) {
     agregarRespuesta(330, 1519, 1, "Totalmente satisfecho", 1.0);
     agregarRespuesta(330, 1520, 2, "Satisfecho", 0.6);
     agregarRespuesta(330, 1521, 3, "Insatisfecho", 0.1);
+}
+
+
+//-----------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------------------
+
+// Función mejorada para mostrar encuestas respondidas
+
+void mostrarEncuestasRespondidasPorID(encuestaRespondidas* listaRespondidas, encuestas** topeEncuestas) {
+    if (listaRespondidas == NULL) {
+        printf("No hay encuestas respondidas cargadas.\n");
+        printf("Presione ENTER para continuar...");
+        getchar();
+        clear_screen();
+        return;
+    }
+
+    // Paso 1: Mostrar encuestas únicas respondidas que existen en la pila principal
+    printf("==================================================\n");
+    printf("       LISTADO DE ENCUESTAS RESPONDIDAS\n");
+    printf("==================================================\n");
+    
+    encuestaRespondidas* actual = listaRespondidas;
+    int encuestasUnicas[100] = {0};
+    char denominaciones[100][50] = {{0}}; // Almacena denominaciones
+    int totalEncuestas = 0;
+    
+    // Identificar encuestas únicas que existen en la pila principal
+    while (actual != NULL && totalEncuestas < 100) {
+        int encontrado = 0;
+        
+        // Verificar si ya registramos esta encuesta
+        for (int i = 0; i < totalEncuestas; i++) {
+            if (encuestasUnicas[i] == actual->encuesta_id) {
+                encontrado = 1;
+                break;
+            }
+        }
+        
+        // Si es una encuesta nueva y existe en la pila principal, obtener sus datos
+        if (!encontrado && idExiste(*topeEncuestas, actual->encuesta_id)) {
+            encuestasUnicas[totalEncuestas] = actual->encuesta_id;
+            
+            // Buscar la denominación en la pila
+            encuestas* pilaTemp = NULL;
+            encuestas* nodoEncuesta = NULL;
+            encuestas* copiaTope = *topeEncuestas;
+            bool encontrada = false;
+            
+            while (!vacia(&copiaTope) && !encontrada) {
+                desapilar(&copiaTope, &nodoEncuesta);
+                
+                if (nodoEncuesta->encuesta_id == actual->encuesta_id) {
+                    encontrada = true;
+                    strncpy(denominaciones[totalEncuestas], nodoEncuesta->denominacion, 49);
+                }
+                
+                apilar(&pilaTemp, &nodoEncuesta);
+            }
+            
+            // Restaurar la copia temporal
+            while (!vacia(&pilaTemp)) {
+                desapilar(&pilaTemp, &nodoEncuesta);
+                apilar(&copiaTope, &nodoEncuesta);
+            }
+            
+            printf("[Opcion %d] - ID: %d - Titilo: %s\n", 
+                   totalEncuestas + 1, 
+                   actual->encuesta_id,
+                   denominaciones[totalEncuestas]);
+            
+            totalEncuestas++;
+        }
+        
+        actual = actual->sgte;
+    }
+    
+    if (totalEncuestas == 0) {
+        printf("No hay encuestas respondidas validas para mostrar.\n");
+        printf("Presione ENTER para continuar...");
+        getchar();
+        return;
+    }
+    
+    // Paso 2: Permitir selección
+    int opcion;
+    printf("\nIngrese el NUMERO DE LA OPCION para ver detalles (1-%d, 0 para salir): ", totalEncuestas);
+    scanf("%d", &opcion);
+    
+    if (opcion == 0){
+        clear_screen();
+        return;
+    }
+    if (opcion < 1 || opcion > totalEncuestas) {
+        printf("\nERROR: Opcion invalida. Debe ingresar un numero entre 1 y %d\n", totalEncuestas);
+        printf("Presione ENTER para continuar...");
+        getchar();  // Limpiar buffer
+        getchar();  // Esperar ENTER
+        return;
+    }
+    
+    int encuestaIdSeleccionada = encuestasUnicas[opcion - 1];
+    char denominacionSeleccionada[50];
+    strcpy(denominacionSeleccionada, denominaciones[opcion - 1]);
+    
+    // Paso 3: Mostrar detalle
+    clear_screen();
+    printf("\n==================================================\n");
+    printf("     DETALLE COMPLETO DE ENCUESTA: \n     %s (ID: %d)\n", 
+           denominacionSeleccionada, encuestaIdSeleccionada);
+    printf("==================================================\n");
+    
+    // Buscar encuesta en la pila para mostrar sus datos
+    encuestas* pilaTemp = NULL;
+    encuestas* nodoEncuesta = NULL;
+    bool encontrada = false;
+    
+    // Usamos una copia del tope para no modificar la pila original
+    encuestas* copiaTope = *topeEncuestas;
+    
+    while (!vacia(&copiaTope)) {
+        desapilar(&copiaTope, &nodoEncuesta);
+        
+        if (nodoEncuesta->encuesta_id == encuestaIdSeleccionada) {
+            encontrada = true;
+            printf("Denominacion: %s\n", nodoEncuesta->denominacion);
+            printf("Fecha: %d/%d\n", nodoEncuesta->encuesta_mes, nodoEncuesta->encuesta_anio);
+            printf("Procesada: %s\n", nodoEncuesta->procesada ? "Si" : "No");
+            printf("--------------------------------------------------\n");
+        }
+        
+        apilar(&pilaTemp, &nodoEncuesta);
+    }
+    
+    // Restaurar la copia temporal
+    while (!vacia(&pilaTemp)) {
+        desapilar(&pilaTemp, &nodoEncuesta);
+        apilar(&copiaTope, &nodoEncuesta);
+    }
+    
+    if (!encontrada) {
+        printf("Error: Encuesta no encontrada en la pila principal.\n");
+        printf("Presione ENTER para continuar...");
+        getchar();
+        getchar();
+        return;
+    }
+    
+    // Paso 4: Mostrar respuestas para esta encuesta
+    actual = listaRespondidas;
+    int registros = 0;
+    
+    while (actual != NULL) {
+        if (actual->encuesta_id == encuestaIdSeleccionada) {
+            if (actual->pregunta_id && actual->respuesta_id && actual->encuestador_id) {
+                printf("\nPREGUNTA: %s\n", actual->pregunta_id->pregunta);
+                printf("RESPUESTA: %s\n", actual->respuesta_id->respuesta);
+                printf("Ponderacion: %.2f\n", actual->respuesta_id->ponderacion);
+                
+                // Formatear fecha
+                char fechaStr[9];
+                snprintf(fechaStr, sizeof(fechaStr), "%d", actual->fecha_realizacion);
+                if (strlen(fechaStr) == 8) {
+                    printf("Fecha: %.4s/%.2s/%.2s\n", fechaStr, fechaStr+4, fechaStr+6);
+                } else {
+                    printf("Fecha: %d\n", actual->fecha_realizacion);
+                }
+                
+                printf("Encuestador: %s (ID: %d)\n", 
+                       actual->encuestador_id->nombre,
+                       actual->encuestador_id->encuestador_id);
+                printf("--------------------------------------------------\n");
+                registros++;
+            }
+        }
+        actual = actual->sgte;
+    }
+    
+    if (registros == 0) {
+        printf("No se encontraron respuestas para esta encuesta.\n");
+    }
+    
+    printf("\nPresione ENTER para continuar...");
+    getchar();  // Limpiar buffer
+    getchar();  // Esperar ENTER
+    clear_screen();
 }
 
 //--------------------------------------------------------------------------------------------------------------
