@@ -55,6 +55,12 @@ typedef struct encuestaRespondidas{
     struct encuestaRespondidas *sgte;
 }encuestaRespondidas;
 
+typedef struct nodoABB {
+    int idEncuesta;
+	int idEncustaRespondida;
+	struct nodoABB* izq;
+	struct nodoABB* der;
+}nodoABB;
 
 //Funciones de menu y login
 void menu_encuestas(encuestas **tope);
@@ -83,10 +89,16 @@ encuestaRespondidas* cargarEncuestasRespondidas(
     sEncuestador* listaEncuestadores,
     encuestas** topePila
 );
+
 preguntas* buscarPregunta(int id_pregunta);
 respuestas* buscarRespuesta(int id_respuesta);
 sEncuestador* buscarEncuestador(sEncuestador* lista, int id);
 void mostrarEncuestasRespondidas(encuestaRespondidas* lista);
+
+//Funciones del plantin
+void buscarIdsParaABB(encuestaRespondidas* inicio, encuestas* tope);
+void crecer(nodoABB** raiz, nodoABB** aux);
+void PrintearInOrder(nodoABB* raiz);
 
 // Funciones para cargar datos de ejemplo
 void agregarPregunta(int encuesta_id, int pregunta_id, const char* pregunta, float ponderacion);
@@ -114,7 +126,7 @@ preguntas* inicioPreguntas = NULL; //puntero de manera global para la lista enla
 int main() {
     sEncuestador* listaEncuestadores = NULL;
     encuestas *tope = NULL;
-    encuestaRespondidas* listaRespondidas;
+    encuestaRespondidas* listaRespondidas = NULL;
 
     int control;
 
@@ -1318,7 +1330,7 @@ void crearPregunta(encuestas* topePila) {
 		scanf("%d", &idEncuesta);*/
 	} while (idEncuesta != -1);
 
-}
+}//arreglar esto
 
 void mostrarPreguntas(int idEncuesta) {
 	preguntas* aux = inicioPreguntas;
@@ -1606,6 +1618,93 @@ void mostrarEncuestasRespondidas(encuestaRespondidas* lista) {
 
 
 //------------------------------------------------------------------------------------------------
+
+
+//----------------------------Arbolito de navidad--------------------------------------------------------
+
+void buscarIdsParaABB(encuestaRespondidas* inicio, encuestas* tope) {
+    int id, usrChoice;
+    nodoABB* Raiz = NULL;
+
+    do {
+
+        printf("\nIngrese el id de la encuesta de la que quiere crear el tree (corte bilinwe): ");
+        scanf("%d", &id);
+        
+        if (idExiste(tope, id) == 0) {
+
+            do {
+
+                if (inicio->encuesta_id == id) {
+
+                    nodoABB* nv_nodo = (nodoABB*)malloc(sizeof(nodoABB));
+
+                    if (nv_nodo != NULL) {
+
+                        nv_nodo->idEncuesta = id;
+                        nv_nodo->der = NULL;
+                        nv_nodo->izq = NULL;
+                        nv_nodo->idEncustaRespondida = inicio->encuestarResondida_id;
+                        crecer(&Raiz, &nv_nodo);
+
+                    }
+                    else {
+                        printf("\nError de creacion de NODO!!");
+                    }
+
+                }
+
+                inicio = inicio->sgte;
+
+            } while (inicio != NULL);
+
+        }
+        else {
+            printf("\nId no existe, quiere probar con otro? ");
+            scanf("%d", &usrChoice);
+        }
+
+    } while (usrChoice == 1);
+
+    printf("\nDesea mostrar el arbol recien creado? \n\t1.Si.\n\t0.No, deja de romper");
+    scanf("%d", &usrChoice);
+
+    if (usrChoice == 1) {
+        PrintearInOrder(Raiz);
+    }
+
+}
+
+void crecer(nodoABB** raiz, nodoABB** aux){
+	if (*raiz == NULL) {
+		*raiz = *aux;
+        (*raiz)->izq = NULL;
+        (*raiz)->der = NULL;
+	}
+	else {
+        if (&(*raiz)->idEncustaRespondida > &(*aux)->idEncustaRespondida) {
+            crecer(&(*raiz)->izq , aux);
+        }
+        else {
+            if (&(*raiz)->idEncustaRespondida < &(*aux)->idEncustaRespondida) {
+                crecer(&(*raiz)->der, aux);
+            }
+        }
+	}
+}
+
+void PrintearInOrder(nodoABB* raiz) {
+    if (raiz != NULL) {
+        PrintearInOrder(raiz->izq);
+        printf("\n%d", raiz->idEncustaRespondida);
+        PrintearInOrder(raiz->der);
+    }
+    else {
+        printf("\nNada mas para imprimir");
+    }
+}
+
+//-------------------------------------------------------------------------------------------------------- 
 
 //--------------------------Funcion magica para cargar datos a las estructuras----------------------------
 
