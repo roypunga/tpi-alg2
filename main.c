@@ -13,8 +13,6 @@ void clear_screen() {
     #endif
 }
 
-//00001500000330000000001520202505219999000000000111
-
 typedef struct encuestas{
     int encuesta_id;
     char denominacion[50];
