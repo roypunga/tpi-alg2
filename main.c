@@ -122,6 +122,9 @@ void buscarBorrar(int num, respuestas **, respuestas **, int *);
 void mostrarEncuestadores(sEncuestador* actual); 
 int verificarIdPregunta(int num, preguntas **);
 
+// Funciones ponderar encuestas
+void ponderarEncuesta(encuestaRespondidas *lista, encuestas **topePila);
+
 preguntas* inicioPreguntas = NULL; //puntero de manera global para la lista enlazada simple
 //Prueba de pasar el tope desde main hasta crear_encuesta 
 int main() {
@@ -352,7 +355,7 @@ void menu_encuestador(encuestas** tope, sEncuestador* listaEncuestadores, encues
             case 4:
                 clear_screen();
                 printf("\n--- Ponderaciones ---\n");
-                // Función para mostrar ponderaciones iría aquí
+                ponderarEncuesta(listaRespondidas, tope);
                 break;
             case 5:
                 clear_screen();
@@ -1441,7 +1444,7 @@ encuestaRespondidas* cargarEncuestasRespondidas(
 
     FILE *archivo = fopen("resultados.csv", "r");
     if (archivo == NULL) {
-        perror("Error al abrir el archivo");
+        printf("Error al abrir el archivo");
         return lista;
     }
 
@@ -1704,6 +1707,54 @@ void PrintearInOrder(nodoABB* raiz) {
     else {
         printf("\nNada mas para imprimir");
     }
+}
+
+//-------------------------------------------------------------------------------------------------------- 
+
+
+//--------------------------ponderar las locuritas estas--------------------------------------
+void ponderarEncuesta(encuestaRespondidas *lista, encuestas **topePila){
+
+    int  encontrado = 0, id = 0;
+    float cont = 0, ponderacion = 0, acumulador = 0;
+    encuestas *auxPila = NULL, *tpAux = NULL;
+    encuestaRespondidas *auxLista = lista;
+
+    desapilar(topePila, &auxPila);
+    while(auxPila != NULL){
+        while(auxLista != NULL){
+            if(auxPila->encuesta_id == auxLista->encuesta_id){
+                acumulador = acumulador + ((auxLista->pregunta_id->ponderacion) * (auxLista->respuesta_id->ponderacion));
+                if(encontrado == 0){
+                    id = auxLista->pregunta_id->pregunta_id;
+                    encontrado = 1;
+                    cont = 1;
+                } else 
+                    if(encontrado == 1 && auxLista->pregunta_id->pregunta_id == id){
+                        cont = cont + 1;
+                    } 
+            }
+            auxLista = auxLista->sgte;
+        }
+            auxLista = lista;
+            ponderacion = 100 * (acumulador / cont);
+            auxPila->procesada = 1;
+            printf("La encuesta %d, llamada: %s, tiene %.0f respuestas y una ponderacion total de: %.2f\n", auxPila->encuesta_id, auxPila->denominacion, cont, ponderacion);
+            apilar(&tpAux, &auxPila);
+            desapilar(topePila, &auxPila);
+            encontrado = 0;
+            id = 0;
+            acumulador = 0;
+            cont = 0;     
+    }
+
+    desapilar(&tpAux, &auxPila);
+
+    while(auxPila != NULL){
+        apilar(topePila, &auxPila);
+        desapilar(&tpAux, &auxPila);
+    }   
+
 }
 
 //-------------------------------------------------------------------------------------------------------- 
