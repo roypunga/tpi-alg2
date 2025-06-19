@@ -464,6 +464,7 @@ void menu_preguntas(encuestas* tope) {
                 //clear_screen();
                 break;
             case 2:
+                mostrar_encuesta(&tope, 0);
 				printf("Ingrese el ID de la encuesta para mostrar sus preguntas: ");
 				scanf("%d", &idMostrar);
                 clear_screen();
@@ -471,6 +472,7 @@ void menu_preguntas(encuestas* tope) {
                 //clear_screen();
                 break;
             case 3:
+                mostrar_encuesta(&tope, 0);
 				printf("Ingrese el ID de la encuesta para eliminar sus preguntas: ");
 				scanf("%d", &idMostrar);
                 eliminarPregunta(&inicioPreguntas, idMostrar);
@@ -1287,6 +1289,8 @@ void crearPreguntas(encuestas* tope) {
                                 nv_nodo->ponderacion = ponderacionPregunta;
 
                                 nv_nodo->sgte = NULL;
+
+                                ponderacionDisponible -= ponderacionPregunta;
 
                                 suma = (suma + ponderacionPregunta);
 
