@@ -63,11 +63,11 @@ typedef struct nodoABB {
 }nodoABB;
 
 //Funciones de menu y login
-void menu_encuestas(encuestas **tope, encuestaRespondidas* listaEncuestasResp);
+void menu_encuestas(encuestas **tope, encuestaRespondidas** listaEncuestasResp);
 void menu_preguntas(encuestas* tope);
-void menu_respuestas(encuestaRespondidas* listaRespondidas, sEncuestador* listaEncuestadores, encuestas** tope);
-void menu_administrador(encuestas **tope, sEncuestador** listaEncuestadores, encuestaRespondidas* listaEncuestasResp);
-void menu_encuestador(encuestas** tope, sEncuestador* listaEncuestadores, encuestaRespondidas* listaRespondidas);
+void menu_respuestas(encuestaRespondidas** listaRespondidas, sEncuestador* listaEncuestadores, encuestas** tope);
+void menu_administrador(encuestas **tope, sEncuestador** listaEncuestadores, encuestaRespondidas** listaEncuestasResp);
+void menu_encuestador(encuestas** tope, sEncuestador* listaEncuestadores, encuestaRespondidas** listaRespondidas);
 void menu_AdmEncuestadores(sEncuestador** listaEncuestadores);
 // Funciones de manejo de encuestas
 void mostrar_encuesta(encuestas **tope,int interactivo);
@@ -164,11 +164,11 @@ int main() {
 
         if(control == 2){
             clear_screen();
-            menu_administrador(&tope, &listaEncuestadores, listaRespondidas);
+            menu_administrador(&tope, &listaEncuestadores, &listaRespondidas);
         }
         if(control == 1){
             clear_screen();
-            menu_encuestador(&tope, listaEncuestadores, listaRespondidas);
+            menu_encuestador(&tope, listaEncuestadores, &listaRespondidas);
         }
         if(control == 0){
             clear_screen();
@@ -237,7 +237,7 @@ int login(struct sEncuestador* lista){
     return retorno;
 }
 
-void menu_administrador(encuestas **tope, sEncuestador** listaEncuestadores, encuestaRespondidas* listaEncuestasResp){
+void menu_administrador(encuestas **tope, sEncuestador** listaEncuestadores, encuestaRespondidas** listaEncuestasResp){
        int opcion;
     
     do {
@@ -318,7 +318,7 @@ int opcion;
     } while (opcion != 0);
 }
 
-void menu_encuestador(encuestas** tope, sEncuestador* listaEncuestadores, encuestaRespondidas* listaRespondidas) {
+void menu_encuestador(encuestas** tope, sEncuestador* listaEncuestadores, encuestaRespondidas** listaRespondidas) {
     int opcion;
     
     do {
@@ -340,28 +340,28 @@ void menu_encuestador(encuestas** tope, sEncuestador* listaEncuestadores, encues
             case 1:
                 clear_screen();
                 printf("\n--- Cargar desde CSV ---\n");
-                listaRespondidas = cargarEncuestasRespondidas(listaRespondidas, listaEncuestadores, tope);
+                *listaRespondidas = cargarEncuestasRespondidas(*listaRespondidas, listaEncuestadores, tope);
                 break;
             case 2:
                 clear_screen();
                 printf("\n--- Ingreso manual ---\n");
-                listaRespondidas = cargarManualEncuestaRespondida(listaRespondidas, listaEncuestadores, *tope);
+                *listaRespondidas = cargarManualEncuestaRespondida(*listaRespondidas, listaEncuestadores, *tope);
                 break;
             case 3:
                 clear_screen();
                 printf("\n--- Todas las encuestas ---\n");
-                mostrarEncuestasRespondidas(listaRespondidas);
+                mostrarEncuestasRespondidas(*listaRespondidas);
                 break;
             case 4:
                 clear_screen();
                 printf("\n--- Ponderaciones ---\n");
-                ponderarEncuesta(listaRespondidas, tope);
+                ponderarEncuesta(*listaRespondidas, tope);
                 break;
             case 5:
                 clear_screen();
                 //printf("\n--- Buscar por ID ---\n");
                 // Función para mostrar encuesta por ID iría aquí
-                mostrarEncuestasRespondidasPorID(listaRespondidas,tope);
+                mostrarEncuestasRespondidasPorID(*listaRespondidas,tope);
                 break;
             case 0:
                 clear_screen();
@@ -373,7 +373,7 @@ void menu_encuestador(encuestas** tope, sEncuestador* listaEncuestadores, encues
     } while (opcion != 0);
 }
 
-void menu_encuestas(encuestas **tope, encuestaRespondidas* listaEncuestasResp) {
+void menu_encuestas(encuestas **tope, encuestaRespondidas** listaEncuestasResp) {
     int opcion;
     char buffer[16];
     int encuesta_id;
@@ -425,8 +425,8 @@ void menu_encuestas(encuestas **tope, encuestaRespondidas* listaEncuestasResp) {
                 clear_screen();
                 break;
             case 5:
-                ponderarEncuesta(listaEncuestasResp, tope);
                 clear_screen();
+                ponderarEncuesta(*listaEncuestasResp, tope);
                 break;
             case 6:
                 //mostrar encuesta por id
@@ -486,7 +486,7 @@ void menu_preguntas(encuestas* tope) {
     } while (opcion != 0);
 }
 
-void menu_respuestas(encuestaRespondidas* listaRespondidas, sEncuestador* listaEncuestadores, encuestas** tope) {
+void menu_respuestas(encuestaRespondidas** listaRespondidas, sEncuestador* listaEncuestadores, encuestas** tope) {
     int opcion;
     int num;
     do {
@@ -498,6 +498,7 @@ void menu_respuestas(encuestaRespondidas* listaRespondidas, sEncuestador* listaE
         printf("3. Eliminar respuesta\n");
         printf("4. Cargar respuestas desde .CSV\n");
         printf("5. Cargar encuestas respondidas manualmente\n");
+        printf("6. Mostrar encuestas respondidas\n");
         printf("0. Volver al menu principal\n");
         printf("=================================\n");
         printf("Seleccione una opcion: ");
@@ -520,12 +521,16 @@ void menu_respuestas(encuestaRespondidas* listaRespondidas, sEncuestador* listaE
                 clear_screen();
                 break;
             case 4:
-                listaRespondidas = cargarEncuestasRespondidas(listaRespondidas, listaEncuestadores, tope);
                 clear_screen();
+                *listaRespondidas = cargarEncuestasRespondidas(*listaRespondidas, listaEncuestadores, tope);
                 break;
             case 5:
-                listaRespondidas = cargarManualEncuestaRespondida(listaRespondidas, listaEncuestadores, *tope);
                 clear_screen();
+                *listaRespondidas = cargarManualEncuestaRespondida(*listaRespondidas, listaEncuestadores, *tope);
+                break;
+            case 6:
+                clear_screen();
+                mostrarEncuestasRespondidas(*listaRespondidas);
                 break;
             case 0:
                 printf("\nVolviendo al menu principal...\n");
@@ -591,6 +596,9 @@ void mostrar_encuesta(encuestas **tope, int interactivo) {
             } else {
                 opcion = atoi(buffer);
             }
+
+            // no entiendo por que aca hay que poner enter 2 veces!!!!!!!!!!!!!!!!!!!
+            // esto con python no pasaba....
 
             switch (opcion) {
                 case 1:
@@ -1231,7 +1239,7 @@ void crearPreguntas(encuestas* tope) {
     float ponderacionPregunta, ponderacionDisponible = 0, suma=0;
 
     do {
-
+        mostrar_encuesta(&tope, 0);
         printf("\nIngrese el id de la encuesta a la que le desea cargar preguntas (-1 salir): ");
         scanf("%d", &idEncuesta);
 
@@ -1992,8 +2000,11 @@ void ponderarEncuesta(encuestaRespondidas *lista, encuestas **topePila){
         }
             auxLista = lista;
             ponderacion = 100 * (acumulador / cont);
-            auxPila->procesada = 1;
-            printf("La encuesta %d, llamada: %s, tiene %.0f respuestas y una ponderacion total de: %.2f\n", auxPila->encuesta_id, auxPila->denominacion, cont, ponderacion);
+            if(cont != 0){
+                printf("La encuesta %d, llamada: %s, tiene %.0f respuestas y una ponderacion total de: %.2f\n", auxPila->encuesta_id, auxPila->denominacion, cont, ponderacion);
+                auxPila->procesada = 1;
+            }
+            if(cont == 0) printf("La encuesta %d, llamada: %s, no tiene respuestas.\n", auxPila->encuesta_id, auxPila->denominacion);
             apilar(&tpAux, &auxPila);
             desapilar(topePila, &auxPila);
             encontrado = 0;
