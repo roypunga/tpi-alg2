@@ -126,7 +126,7 @@ bool verificarProcesado(encuestas** tope, int id);
 bool verificarPreguntas(preguntas* inicioListaPreguntas, int id);
 
 // Funciones para CRUD de respuestas
-void crearRespuesta();
+void crearRespuesta(encuestas** tope);
 void mostrarRespuestas();
 void eliminarRespuestas(int);
 void buscarBorrar(int num, respuestas **, respuestas **, int *);
@@ -509,8 +509,8 @@ void menu_respuestas(encuestaRespondidas** listaRespondidas, sEncuestador* lista
         
         switch(opcion) {
             case 1:
-                crearRespuesta();
                 clear_screen();
+                crearRespuesta(tope);
                 break;
             case 2:
                 clear_screen();
@@ -997,7 +997,7 @@ void agregarEncuestador(sEncuestador** lista) {
 
 //CRUD RESPUESTAS --------------->
 respuestas *inicioRespuestas = NULL; //puntero de manera global para la lista enlazada circular
-void crearRespuesta(){
+void crearRespuesta(encuestas** tope){
 
 	int parar = 1, num = 0, verificar = 0;
 	respuestas *ini = NULL, *iniListaAux = NULL, *iniListaAuxAux = NULL;
@@ -1007,13 +1007,28 @@ void crearRespuesta(){
 	printf("=================================\n");
 	printf("\n");
 
+    mostrar_encuesta(tope, 0);
+    printf("Ingrese el id de encuesta al que desea agregar respuestas.\n");
+	scanf("%d",&num);
+
+    if(!idExiste(*tope, num)){
+        printf("Error, no existe ese id de encuesta.\n");
+        return;
+    }
+
+    printf("Preguntas disponibles: \n");
+    preguntas* auxLista = inicioPreguntas;
+    while(auxLista!= NULL){
+        if(auxLista->encuesta_id == num){
+            printf("\n'%s'\nID: %d\n", auxLista->pregunta, auxLista->pregunta_id);
+        }
+        auxLista = auxLista->sgte;
+    }
+
 	printf("Ingrese el id de pregunta al que desea crearle la respuesta\n");
 	scanf("%d",&num);
-	printf("num leido: %d\n", num);
 
 	verificar = verificarIdPregunta(num, &inicioPreguntas);
-
-    printf("VERIFICAR DESPUES DE LA FUNCION BUSCAR ID-------> %d", verificar);
 
 	if(verificar != 1){
 		printf("El id de la respuesta ingresada no existe\n");
