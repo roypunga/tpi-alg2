@@ -63,10 +63,10 @@ typedef struct nodoABB {
 }nodoABB;
 
 //Funciones de menu y login
-void menu_encuestas(encuestas **tope);
+void menu_encuestas(encuestas **tope, encuestaRespondidas* listaEncuestasResp);
 void menu_preguntas(encuestas* tope);
-void menu_respuestas();
-void menu_administrador(encuestas **tope, sEncuestador** listaEncuestadores);
+void menu_respuestas(encuestaRespondidas* listaRespondidas, sEncuestador* listaEncuestadores, encuestas** tope);
+void menu_administrador(encuestas **tope, sEncuestador** listaEncuestadores, encuestaRespondidas* listaEncuestasResp);
 void menu_encuestador(encuestas** tope, sEncuestador* listaEncuestadores, encuestaRespondidas* listaRespondidas);
 void menu_AdmEncuestadores(sEncuestador** listaEncuestadores);
 // Funciones de manejo de encuestas
@@ -162,7 +162,7 @@ int main() {
 
         if(control == 2){
             clear_screen();
-            menu_administrador(&tope, &listaEncuestadores);
+            menu_administrador(&tope, &listaEncuestadores, listaRespondidas);
         }
         if(control == 1){
             clear_screen();
@@ -235,7 +235,7 @@ int login(struct sEncuestador* lista){
     return retorno;
 }
 
-void menu_administrador(encuestas **tope, sEncuestador** listaEncuestadores){
+void menu_administrador(encuestas **tope, sEncuestador** listaEncuestadores, encuestaRespondidas* listaEncuestasResp){
        int opcion;
     
     do {
@@ -255,7 +255,7 @@ void menu_administrador(encuestas **tope, sEncuestador** listaEncuestadores){
         switch(opcion) {
             case 1:
                 clear_screen();
-                menu_encuestas(tope);
+                menu_encuestas(tope, listaEncuestasResp);
                 break;
             case 2:
                 clear_screen();
@@ -263,7 +263,7 @@ void menu_administrador(encuestas **tope, sEncuestador** listaEncuestadores){
                 break;
             case 3:
                 clear_screen();
-                menu_respuestas();
+                menu_respuestas(listaEncuestasResp, *listaEncuestadores, tope);
                 break;
             case 4:
                 clear_screen();
@@ -291,7 +291,6 @@ int opcion;
         printf("=================================\n");
         printf("1. Agregar encuestador\n");
         printf("2. Mostrar encuestadores\n");
-        printf("3. Eliminar encuestador\n");
         printf("0. Volver al menu principal\n");
         printf("=================================\n");
         printf("Seleccione una opcion: ");
@@ -306,10 +305,6 @@ int opcion;
             case 2:
                 clear_screen();
                 mostrarEncuestadores((*listaEncuestadores));
-                break;
-            case 3:
-                //eliminar encuestador
-                clear_screen();
                 break;
             case 0:
                 clear_screen();
@@ -330,7 +325,7 @@ void menu_encuestador(encuestas** tope, sEncuestador* listaEncuestadores, encues
         printf("=================================\n");
         printf("1. Cargar respuestas desde archivo CSV\n");
         printf("2. Ingresar respuestas manualmente\n");
-        printf("3. Mostrar todos los registros csv\n");
+        printf("3. Mostrar todos los registros de encuestas respondidas\n");
         printf("4. Calcular ponderaciones\n");
         printf("5. Mostrar encuesta especifica (por ID)\n");
         printf("0. Volver al menu principal\n");
@@ -376,7 +371,7 @@ void menu_encuestador(encuestas** tope, sEncuestador* listaEncuestadores, encues
     } while (opcion != 0);
 }
 
-void menu_encuestas(encuestas **tope) {
+void menu_encuestas(encuestas **tope, encuestaRespondidas* listaEncuestasResp) {
     int opcion;
     char buffer[16];
     do {
@@ -385,15 +380,14 @@ void menu_encuestas(encuestas **tope) {
         printf("=================================\n");
         printf("1. Crear encuesta\n");
         printf("2. Mostrar encuestas\n");
-        printf("3. Actualizar encuesta\n");
+        printf("3. Verificar que las encuestas esten completas.\n");
         printf("4. Eliminar encuesta\n");
         printf("5. Calcular ponderacion\n");
         printf("6. Mostrar encuesta especifica\n");
         printf("0. Volver al menu principal\n");
         printf("=================================\n");
         printf("Seleccione una opcion: ");
-       //scanf("%d", &opcion);
-       // while(getchar() != '\n'); // Limpiar buffer
+
         if (fgets(buffer,sizeof(buffer),stdin) != NULL)
             opcion = atoi(buffer);
         else
@@ -412,7 +406,7 @@ void menu_encuestas(encuestas **tope) {
                 clear_screen();
                 break;
             case 3:
-                //actualizar encuesta
+                //verificar
                 clear_screen();
                 break;
             case 4:
@@ -421,7 +415,7 @@ void menu_encuestas(encuestas **tope) {
                 clear_screen();
                 break;
             case 5:
-                //calcular ponderacion
+                ponderarEncuesta(listaEncuestasResp, tope);
                 clear_screen();
                 break;
             case 6:
@@ -447,8 +441,7 @@ void menu_preguntas(encuestas* tope) {
         printf("=================================\n");
         printf("1. Crear pregunta\n");
         printf("2. Mostrar preguntas\n");
-        printf("3. Actualizar pregunta\n");
-        printf("4. Eliminar pregunta\n");
+        printf("3. Eliminar pregunta\n");
         printf("0. Volver al menu principal\n");
         printf("=================================\n");
         printf("Seleccione una opcion: ");
@@ -468,10 +461,6 @@ void menu_preguntas(encuestas* tope) {
                 //clear_screen();
                 break;
             case 3:
-                //actualizar pregunta
-                clear_screen();
-                break;
-            case 4:
 				printf("Ingrese el ID de la encuesta para eliminar sus preguntas: ");
 				scanf("%d", &idMostrar);
                 eliminarPregunta(&inicioPreguntas, idMostrar);
@@ -487,7 +476,7 @@ void menu_preguntas(encuestas* tope) {
     } while (opcion != 0);
 }
 
-void menu_respuestas() {
+void menu_respuestas(encuestaRespondidas* listaRespondidas, sEncuestador* listaEncuestadores, encuestas** tope) {
     int opcion;
     int num;
     do {
@@ -496,9 +485,9 @@ void menu_respuestas() {
         printf("=================================\n");
         printf("1. Crear respuesta\n");
         printf("2. Mostrar respuestas\n");
-        printf("3. Actualizar respuesta\n");
-        printf("4. Eliminar respuesta\n");
-        printf("5. Cargar respuestas desde .CSV\n");
+        printf("3. Eliminar respuesta\n");
+        printf("4. Cargar respuestas desde .CSV\n");
+        printf("5. Cargar encuestas respondidas manualmente\n");
         printf("0. Volver al menu principal\n");
         printf("=================================\n");
         printf("Seleccione una opcion: ");
@@ -515,19 +504,17 @@ void menu_respuestas() {
                 mostrarRespuestas();
                 break;
             case 3:
-                //actualizar respuesta
-                clear_screen();
-                break;
-            case 4:
-
                 printf("Ingrese el id de la pregunta a la que le desea borrar las respuestas\n");
 	            scanf("%d", &num);
-
                 eliminarRespuestas(num);
                 clear_screen();
                 break;
+            case 4:
+                listaRespondidas = cargarEncuestasRespondidas(listaRespondidas, listaEncuestadores, tope);
+                clear_screen();
+                break;
             case 5:
-                //cargar desde csv
+                listaRespondidas = cargarManualEncuestaRespondida(listaRespondidas, listaEncuestadores, *tope);
                 clear_screen();
                 break;
             case 0:
