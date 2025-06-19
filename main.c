@@ -160,7 +160,6 @@ int main() {
         if(control == 1){
             clear_screen();
             menu_encuestador(&tope, listaEncuestadores, listaRespondidas);
-            mostrarRespuestas();
         }
         if(control == 0){
             clear_screen();
