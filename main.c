@@ -13,6 +13,8 @@ void clear_screen() {
     #endif
 }
 
+//00001500000330000000001520202505219999000000000111
+
 typedef struct encuestas{
     int encuesta_id;
     char denominacion[50];
@@ -90,10 +92,17 @@ encuestaRespondidas* cargarEncuestasRespondidas(
     encuestas** topePila
 );
 
+encuestaRespondidas* cargarManualEncuestaRespondida(
+    encuestaRespondidas* lista, 
+    sEncuestador* listaEncuestadores,
+    encuestas *tope
+);
+
 preguntas* buscarPregunta(int id_pregunta);
 respuestas* buscarRespuesta(int id_respuesta);
 sEncuestador* buscarEncuestador(sEncuestador* lista, int id);
 void mostrarEncuestasRespondidas(encuestaRespondidas* lista);
+int esEncuestaRespondidaDuplicada(encuestaRespondidas* lista, encuestaRespondidas* nodo);
 
 //Funciones del plantin
 void buscarIdsParaABB(encuestaRespondidas* inicio, encuestas* tope);
@@ -284,8 +293,7 @@ int opcion;
         printf("=================================\n");
         printf("1. Agregar encuestador\n");
         printf("2. Mostrar encuestadores\n");
-        printf("3. Actualizar encuestador\n");
-        printf("4. Eliminar encuestador\n");
+        printf("3. Eliminar encuestador\n");
         printf("0. Volver al menu principal\n");
         printf("=================================\n");
         printf("Seleccione una opcion: ");
@@ -302,11 +310,7 @@ int opcion;
                 mostrarEncuestadores((*listaEncuestadores));
                 break;
             case 3:
-                //
-                clear_screen();
-                break;
-            case 4:
-                //
+                //eliminar encuestador
                 clear_screen();
                 break;
             case 0:
@@ -329,7 +333,7 @@ void menu_encuestador(encuestas** tope, sEncuestador* listaEncuestadores, encues
         printf("1. Cargar respuestas desde archivo CSV\n");
         printf("2. Ingresar respuestas manualmente\n");
         printf("3. Mostrar todos los registros csv\n");
-        printf("4. Mostrar ponderaciones\n");
+        printf("4. Calcular ponderaciones\n");
         printf("5. Mostrar encuesta especifica (por ID)\n");
         printf("0. Volver al menu principal\n");
         printf("=================================\n");
@@ -346,7 +350,7 @@ void menu_encuestador(encuestas** tope, sEncuestador* listaEncuestadores, encues
             case 2:
                 clear_screen();
                 printf("\n--- Ingreso manual ---\n");
-                // Función para ingreso manual iría aquí
+                listaRespondidas = cargarManualEncuestaRespondida(listaRespondidas, listaEncuestadores, *tope);
                 break;
             case 3:
                 clear_screen();
@@ -1451,7 +1455,7 @@ void eliminarPregunta(preguntas** Ini, int idEncuesta) {
 
 
 //------------------------------------------------------------------------------------------------
-//-------------------------------------------CSV--------------------------------------------------
+//----------------------------------Encuestas Respondida------------------------------------------
 //------------------------------------------------------------------------------------------------
 
 // Funciones auxiliares
@@ -1599,15 +1603,22 @@ encuestaRespondidas* cargarEncuestasRespondidas(
         nuevo->encuestarResondida_id = encuestaRes_id;
         nuevo->sgte = NULL;
 
-        // Insertar en la lista
-        if (lista == NULL) {
-            lista = nuevo;
-        } else {
-            encuestaRespondidas* actual = lista;
-            while (actual->sgte != NULL) {
-                actual = actual->sgte;
+        if(!esEncuestaRespondidaDuplicada(lista, nuevo)){
+            if (lista == NULL) {
+                lista = nuevo;
+            } else {
+                encuestaRespondidas* actual = lista;
+                while (actual->sgte != NULL) {
+                    actual = actual->sgte;
+                }
+                actual->sgte = nuevo;
             }
-            actual->sgte = nuevo;
+
+            printf("¡Registro agregado exitosamente!\n");
+        }
+        else {
+            printf("Error, se intento cargar una respuesta ya cargada.\n");
+            free(nuevo);
         }
     }
 
@@ -1675,6 +1686,198 @@ void mostrarEncuestasRespondidas(encuestaRespondidas* lista) {
     printf("\n================================================================================\n");
     printf("Total de registros: %d\n", contador);
     printf("================================================================================\n");
+}
+encuestaRespondidas* cargarManualEncuestaRespondida(
+    encuestaRespondidas* lista, 
+    sEncuestador* listaEncuestadores,
+    encuestas *tope
+) {
+    printf("\n--- Carga manual de encuesta respondida ---\n");
+    
+    int check = 1, checkExiste = 1;
+
+    // variables temporales
+    int encuesta_id, pregunta_id, respuesta_id, fecha, encuestador_id, encuestaRes_id;
+    char input[100];
+    
+    // Validación de encuesta_id
+    printf("Encuestas disponibles: \n");
+    mostrar_encuesta(&tope, 0);
+
+    do {
+        if(check != 1){
+            printf("Error en la lectura, unicamente valores enteros.\n");
+        }
+        else if(!checkExiste){
+            printf("Error ese id de encuesta no existe, pruebe nuevamente.\n");
+        }
+
+        printf("ID de Encuesta (ej. 15): ");
+        check = scanf("%d", &encuesta_id);
+        limpiarBuffer();
+        checkExiste = idExiste(tope, encuesta_id);
+
+    } while (check != 1 || !checkExiste);
+
+    check = 1;
+    // Validación de pregunta_id
+    preguntas* pregunta_ptr = NULL;
+
+    printf("Preguntas disponibles: \n");
+    preguntas* auxLista = inicioPreguntas;
+    while(auxLista != NULL){
+        if(auxLista->encuesta_id == encuesta_id){
+            printf("ID: %d\n'%s'\n\n", auxLista->pregunta_id, auxLista->pregunta);
+        }
+        auxLista = auxLista->sgte;
+    }
+
+    do {
+        if(check != 1){
+            printf("Error de lectura, unicamente valores enteros.\n");
+        }
+
+        printf("ID de Pregunta (ej. 325): ");
+        check = scanf("%d", &pregunta_id);
+        limpiarBuffer();
+        if (check == 1) {
+            pregunta_ptr = buscarPregunta(pregunta_id);
+            if (pregunta_ptr == NULL) {
+                printf("Error: Pregunta ID %d no existe. Preguntas validas: ", pregunta_id);
+            }
+            else if(pregunta_ptr->encuesta_id != encuesta_id){
+                printf("Error, eligio una pregunta de una encuesta distinta a la seleccionada.\n");
+                pregunta_ptr = NULL;
+            }
+        }
+    } while (pregunta_ptr == NULL);
+
+    check = 1;
+    // Validación de respuesta
+    respuestas* respuesta_ptr = NULL;
+
+    printf("Respuestas disponibles: \n");
+    respuestas* auxListaRes = inicioRespuestas->sgte;
+    printf("ID: %d\n'%s'\n\n", inicioRespuestas->respuesta_id, inicioRespuestas->respuesta);
+    while(auxListaRes != inicioRespuestas){
+        if(auxListaRes->pregunta_id == pregunta_id){
+            printf("ID: %d\n'%s'\n\n", auxListaRes->respuesta_id, auxListaRes->respuesta);
+        }
+        auxListaRes = auxListaRes->sgte;
+    }
+
+    do {
+        if(check != 1){
+            printf("Error de lectura, unicamente valores enteros.\n");
+        }
+        printf("ID de Pregunta (ej. 666): ");
+        check = scanf("%d", &respuesta_id);
+        limpiarBuffer();
+        if (check == 1) {
+            respuesta_ptr = buscarRespuesta(respuesta_id);
+            if (respuesta_ptr == NULL) {
+                printf("Error: Pregunta ID %d no existe. Preguntas validas: ", pregunta_id);
+            }
+            else if(respuesta_ptr->pregunta_id != pregunta_id){
+                printf("Error, eligio la respuesta de una pregunta distinta a la seleccionada.\n");
+                respuesta_ptr = NULL;
+            }
+        }
+    } while (pregunta_ptr == NULL);
+
+    check = 1;
+    // Validación de fecha (AAAAMMDD)
+    do {
+        if(check != 1){
+            printf("Error, use el formato AAAAMMDD.\n");
+        }
+        printf("Fecha de realizacion (AAAAMMDD ej. 20250520): ");
+        check = scanf("%d", &fecha);
+        limpiarBuffer();
+    } while (check != 1 || fecha < 20000101 || fecha > 21001231);
+
+
+    check = 1;
+    // Validación de encuestador
+
+    printf("Encuestadores disponibles: \n");
+    mostrarEncuestadores(listaEncuestadores);
+
+    sEncuestador* encuestador_ptr = NULL;
+    do {
+        printf("ID de Encuestador (ej. 2): ");
+        check = scanf("%d", &encuestador_id);
+        if (check == 1) {
+            encuestador_ptr = buscarEncuestador(listaEncuestadores, encuestador_id);
+            if (encuestador_ptr == NULL) {
+                printf("Error, ese encuestador no existe.\n");
+            }
+        }
+    } while (!encuestador_ptr);
+
+    // Validación de ID de encuesta respondida
+    do {
+        printf("ID de Encuesta Respondida (12 digitos ej. 000000000095): ");
+        check = scanf("%d", &encuestaRes_id);
+    } while (check != 1 || encuestaRes_id < 0);
+
+    // Crear nuevo nodo
+    encuestaRespondidas* nuevo = (encuestaRespondidas*)malloc(sizeof(encuestaRespondidas));
+    nuevo->encuesta_id = encuesta_id;
+    nuevo->pregunta_id = pregunta_ptr;
+    nuevo->respuesta_id = respuesta_ptr;
+    nuevo->fecha_realizacion = fecha;
+    nuevo->encuestador_id = encuestador_ptr;
+    nuevo->encuestarResondida_id = encuestaRes_id;
+    nuevo->sgte = NULL;
+
+    // Insertar en lista
+    if(!esEncuestaRespondidaDuplicada(lista, nuevo)){
+        if (lista == NULL) {
+            lista = nuevo;
+        } else {
+            encuestaRespondidas* actual = lista;
+            while (actual->sgte != NULL) {
+                actual = actual->sgte;
+            }
+            actual->sgte = nuevo;
+        }
+
+        printf("¡Registro agregado exitosamente!\n");
+    }
+    else {
+        printf("Error, ya se registro esa respuesta.\n");
+        free(nuevo);
+    }
+    return lista;
+}
+
+
+int esEncuestaRespondidaDuplicada(encuestaRespondidas* lista, encuestaRespondidas* nodo) {
+    /*
+    verifica si un nodo de encuesta respondida esta duplicado en la lista
+    se considera que un nodo esta duplicado si:
+        - tiene el mismo ID de encuesta respondida
+        - y la misma pregunta
+    */
+    int retorno = 0;
+
+    if (nodo != NULL) {
+    encuestaRespondidas* actual = lista;
+    while (actual != NULL) {
+
+        int mismoId = (actual->encuestarResondida_id == nodo->encuestarResondida_id);
+        int mismaPregunta = (actual->pregunta_id == nodo->pregunta_id);
+
+        if (mismoId && mismaPregunta) {
+            retorno = 1;
+        }
+        
+        actual = actual->sgte;
+    }
+    }
+    
+    return retorno; 
 }
 
 
