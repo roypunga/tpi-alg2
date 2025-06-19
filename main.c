@@ -591,7 +591,7 @@ void mostrar_encuesta(encuestas **tope, int interactivo) {
             printf("\nQue desea hacer?\n");
             printf("1. Volver al menu principal\n");
             printf("2. Volver a mostrar encuestas\n");
-            printf("Opcion: ");
+            printf("Opcion (debe tocar enter 2 veces): ");
 
             if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
                 opcion = 1;
@@ -2403,3 +2403,10 @@ int encuestaCompleta(int encuesta_id) {
 // AB resp -> haya un 1
 // CSV de quique -> este bien cargada
 // CSV sea procesado correctamente
+
+
+//TODO: 
+// -Agregar controles a todos las lecturas de teclado
+// -Funcion mostrar encuesta especifica (la verdad ni de que tiene que hacer, me parece que era la de 
+//  mostrar una encuesta con su formato todo lindo, tipo encuesta, preguntas y respuestas, pero no estoy seguro)
+// -Testear todo a fondo
