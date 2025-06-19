@@ -2181,7 +2181,7 @@ void cargarDatosEjemplo(encuestas** topeEncuestas) {
 //-----------------------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------------------------------
 
-// Función mejorada para mostrar encuestas respondidas
+// Función mejorada para mostrar encuestas respondidas por ID
 
 void mostrarEncuestasRespondidasPorID(encuestaRespondidas* listaRespondidas, encuestas** topeEncuestas) {
     if (listaRespondidas == NULL) {
@@ -2192,175 +2192,214 @@ void mostrarEncuestasRespondidasPorID(encuestaRespondidas* listaRespondidas, enc
         return;
     }
 
-    // Paso 1: Mostrar encuestas únicas respondidas que existen en la pila principal
-    printf("==================================================\n");
-    printf("       LISTADO DE ENCUESTAS RESPONDIDAS\n");
-    printf("==================================================\n");
+    int opcionSalir = 0;
     
-    encuestaRespondidas* actual = listaRespondidas;
-    int encuestasUnicas[100] = {0};
-    char denominaciones[100][50] = {{0}}; // Almacena denominaciones
-    int totalEncuestas = 0;
-    
-    // Identificar encuestas únicas que existen en la pila principal
-    while (actual != NULL && totalEncuestas < 100) {
-        int encontrado = 0;
+    do {
+        // Mostrar lista de encuestas respondidas disponibles
+        printf("==================================================\n");
+        printf("       ENCUESTAS RESPONDIDAS DISPONIBLES\n");
+        printf("==================================================\n");
         
-        // Verificar si ya registramos esta encuesta
-        for (int i = 0; i < totalEncuestas; i++) {
-            if (encuestasUnicas[i] == actual->encuesta_id) {
-                encontrado = 1;
-                break;
+        encuestaRespondidas* actual = listaRespondidas;
+        int ids[100], totalIds = 0;
+        int fechas[100];
+        char denominaciones[100][50];
+        char encuestadores[100][30];
+        int encuestaIds[100];
+        
+        // Recolectar encuestas respondidas únicas
+        while (actual != NULL && totalIds < 100) {
+            int encontrado = 0;
+            
+            for (int i = 0; i < totalIds; i++) {
+                if (ids[i] == actual->encuestarResondida_id) {
+                    encontrado = 1;
+                    break;
+                }
             }
-        }
-        
-        // Si es una encuesta nueva y existe en la pila principal, obtener sus datos
-        if (!encontrado && idExiste(*topeEncuestas, actual->encuesta_id)) {
-            encuestasUnicas[totalEncuestas] = actual->encuesta_id;
             
-            // Buscar la denominación en la pila
-            encuestas* pilaTemp = NULL;
-            encuestas* nodoEncuesta = NULL;
-            encuestas* copiaTope = *topeEncuestas;
-            bool encontrada = false;
-            
-            while (!vacia(&copiaTope) && !encontrada) {
-                desapilar(&copiaTope, &nodoEncuesta);
+            if (!encontrado && idExiste(*topeEncuestas, actual->encuesta_id)) {
+                ids[totalIds] = actual->encuestarResondida_id;
+                fechas[totalIds] = actual->fecha_realizacion;
+                strncpy(encuestadores[totalIds], actual->encuestador_id->nombre, 29);
+                encuestaIds[totalIds] = actual->encuesta_id;
                 
-                if (nodoEncuesta->encuesta_id == actual->encuesta_id) {
-                    encontrada = true;
-                    strncpy(denominaciones[totalEncuestas], nodoEncuesta->denominacion, 49);
+                // Obtener denominación de la encuesta
+                encuestas* pilaTemp = NULL;
+                encuestas* nodoEncuesta = NULL;
+                encuestas* copiaTope = *topeEncuestas;
+                bool encontrada = false;
+                
+                while (!vacia(&copiaTope) && !encontrada) {
+                    desapilar(&copiaTope, &nodoEncuesta);
+                    
+                    if (nodoEncuesta->encuesta_id == actual->encuesta_id) {
+                        encontrada = true;
+                        strncpy(denominaciones[totalIds], nodoEncuesta->denominacion, 49);
+                    }
+                    
+                    apilar(&pilaTemp, &nodoEncuesta);
                 }
                 
-                apilar(&pilaTemp, &nodoEncuesta);
-            }
-            
-            // Restaurar la copia temporal
-            while (!vacia(&pilaTemp)) {
-                desapilar(&pilaTemp, &nodoEncuesta);
-                apilar(&copiaTope, &nodoEncuesta);
-            }
-            
-            printf("[Opcion %d] - ID: %d - Titilo: %s\n", 
-                   totalEncuestas + 1, 
-                   actual->encuesta_id,
-                   denominaciones[totalEncuestas]);
-            
-            totalEncuestas++;
-        }
-        
-        actual = actual->sgte;
-    }
-    
-    if (totalEncuestas == 0) {
-        printf("No hay encuestas respondidas validas para mostrar.\n");
-        printf("Presione ENTER para continuar...");
-        getchar();
-        return;
-    }
-    
-    // Paso 2: Permitir selección
-    int opcion;
-    printf("\nIngrese el NUMERO DE LA OPCION para ver detalles (1-%d, 0 para salir): ", totalEncuestas);
-    scanf("%d", &opcion);
-    
-    if (opcion == 0){
-        clear_screen();
-        return;
-    }
-    if (opcion < 1 || opcion > totalEncuestas) {
-        printf("\nERROR: Opcion invalida. Debe ingresar un numero entre 1 y %d\n", totalEncuestas);
-        printf("Presione ENTER para continuar...");
-        getchar();  // Limpiar buffer
-        getchar();  // Esperar ENTER
-        return;
-    }
-    
-    int encuestaIdSeleccionada = encuestasUnicas[opcion - 1];
-    char denominacionSeleccionada[50];
-    strcpy(denominacionSeleccionada, denominaciones[opcion - 1]);
-    
-    // Paso 3: Mostrar detalle
-    clear_screen();
-    printf("\n==================================================\n");
-    printf("     DETALLE COMPLETO DE ENCUESTA: \n     %s (ID: %d)\n", 
-           denominacionSeleccionada, encuestaIdSeleccionada);
-    printf("==================================================\n");
-    
-    // Buscar encuesta en la pila para mostrar sus datos
-    encuestas* pilaTemp = NULL;
-    encuestas* nodoEncuesta = NULL;
-    bool encontrada = false;
-    
-    // Usamos una copia del tope para no modificar la pila original
-    encuestas* copiaTope = *topeEncuestas;
-    
-    while (!vacia(&copiaTope)) {
-        desapilar(&copiaTope, &nodoEncuesta);
-        
-        if (nodoEncuesta->encuesta_id == encuestaIdSeleccionada) {
-            encontrada = true;
-            printf("Denominacion: %s\n", nodoEncuesta->denominacion);
-            printf("Fecha: %d/%d\n", nodoEncuesta->encuesta_mes, nodoEncuesta->encuesta_anio);
-            printf("Procesada: %s\n", nodoEncuesta->procesada ? "Si" : "No");
-            printf("--------------------------------------------------\n");
-        }
-        
-        apilar(&pilaTemp, &nodoEncuesta);
-    }
-    
-    // Restaurar la copia temporal
-    while (!vacia(&pilaTemp)) {
-        desapilar(&pilaTemp, &nodoEncuesta);
-        apilar(&copiaTope, &nodoEncuesta);
-    }
-    
-    if (!encontrada) {
-        printf("Error: Encuesta no encontrada en la pila principal.\n");
-        printf("Presione ENTER para continuar...");
-        getchar();
-        getchar();
-        return;
-    }
-    
-    // Paso 4: Mostrar respuestas para esta encuesta
-    actual = listaRespondidas;
-    int registros = 0;
-    
-    while (actual != NULL) {
-        if (actual->encuesta_id == encuestaIdSeleccionada) {
-            if (actual->pregunta_id && actual->respuesta_id && actual->encuestador_id) {
-                printf("\nPREGUNTA: %s\n", actual->pregunta_id->pregunta);
-                printf("RESPUESTA: %s\n", actual->respuesta_id->respuesta);
-                printf("Ponderacion: %.2f\n", actual->respuesta_id->ponderacion);
+                // Restaurar pila
+                while (!vacia(&pilaTemp)) {
+                    desapilar(&pilaTemp, &nodoEncuesta);
+                    apilar(&copiaTope, &nodoEncuesta);
+                }
                 
                 // Formatear fecha
                 char fechaStr[9];
-                snprintf(fechaStr, sizeof(fechaStr), "%d", actual->fecha_realizacion);
+                snprintf(fechaStr, sizeof(fechaStr), "%d", fechas[totalIds]);
+                char fechaFormateada[11] = "?";
+                
                 if (strlen(fechaStr) == 8) {
-                    printf("Fecha: %.4s/%.2s/%.2s\n", fechaStr, fechaStr+4, fechaStr+6);
-                } else {
-                    printf("Fecha: %d\n", actual->fecha_realizacion);
+                    snprintf(fechaFormateada, sizeof(fechaFormateada), "%.4s/%.2s/%.2s", fechaStr, fechaStr+4, fechaStr+6);
                 }
                 
-                printf("Encuestador: %s (ID: %d)\n", 
-                       actual->encuestador_id->nombre,
-                       actual->encuestador_id->encuestador_id);
-                printf("--------------------------------------------------\n");
-                registros++;
+                printf("[%d] ID: %d - Encuesta: %d (%s) - Fecha: %s - Por: %s\n", 
+                       totalIds + 1, 
+                       actual->encuestarResondida_id,
+                       encuestaIds[totalIds],
+                       denominaciones[totalIds],
+                       fechaFormateada,
+                       encuestadores[totalIds]);
+                totalIds++;
             }
+            
+            actual = actual->sgte;
         }
-        actual = actual->sgte;
-    }
-    
-    if (registros == 0) {
-        printf("No se encontraron respuestas para esta encuesta.\n");
-    }
-    
-    printf("\nPresione ENTER para continuar...");
-    getchar();  // Limpiar buffer
-    getchar();  // Esperar ENTER
-    clear_screen();
+        
+        if (totalIds == 0) {
+            printf("No hay encuestas respondidas validas para mostrar.\n");
+            printf("Presione ENTER para continuar...");
+            getchar();
+            return;
+        }
+        
+        // Opción para salir
+        printf("\n[%d] Volver al menu anterior\n", totalIds + 1);
+        
+        // Seleccionar encuesta respondida específica
+        int opcion;
+        int intentos = 0;
+        const int MAX_INTENTOS = 3;
+        bool entradaValida = false;
+        
+        do {
+            printf("\nSeleccione una opcion (1-%d): ", totalIds + 1);
+            
+            if (scanf("%d", &opcion) != 1) {
+                // Entrada no numérica
+                limpiarBuffer();
+                printf("Error: Debe ingresar un número. Intente nuevamente.\n");
+                intentos++;
+            } else if (opcion < 1 || opcion > totalIds + 1) {
+                // Fuera de rango
+                printf("Error: Opcion fuera de rango. Intente nuevamente.\n");
+                intentos++;
+            } else {
+                entradaValida = true;
+            }
+            
+            if (intentos >= MAX_INTENTOS) {
+                printf("Demasiados intentos fallidos. Volviendo al menu...\n");
+                clear_screen();
+                return;
+            }
+        } while (!entradaValida);
+        
+        if (opcion == totalIds + 1) {
+            // Salir seleccionado
+            clear_screen();
+            return;
+        }
+        
+        int idRespondida = ids[opcion - 1];
+        int encuestaId = encuestaIds[opcion - 1];
+        
+        // Mostrar la encuesta respondida seleccionada
+        clear_screen();
+        printf("\n==================================================\n");
+        printf("     RESPUESTAS PARA ENCUESTA RESPONDIDA ID: %d\n", idRespondida);
+        printf("     Encuesta ID: %d\n", encuestaId);
+        printf("==================================================\n");
+        
+        printf("Titulo: %s\n\n", denominaciones[opcion-1]);
+        
+        // Recorrer preguntas de esta encuesta
+        preguntas* pregActual = inicioPreguntas;
+        
+        while (pregActual != NULL) {
+            if (pregActual->encuesta_id == encuestaId) {
+                printf("Pregunta %d: %s\n", pregActual->pregunta_id, pregActual->pregunta);
+                
+                // Buscar la respuesta seleccionada para esta pregunta en ESTA encuesta respondida
+                int respuestaSeleccionadaId = -1;
+                encuestaRespondidas* resp = listaRespondidas;
+                
+                while (resp != NULL) {
+                    if (resp->encuestarResondida_id == idRespondida && 
+                        resp->pregunta_id->pregunta_id == pregActual->pregunta_id) {
+                        respuestaSeleccionadaId = resp->respuesta_id->respuesta_id;
+                        break;
+                    }
+                    resp = resp->sgte;
+                }
+                
+                // Mostrar todas las respuestas posibles para esta pregunta
+                respuestas* respActual = inicioRespuestas;
+                if (respActual != NULL) {
+                    do {
+                        if (respActual->pregunta_id == pregActual->pregunta_id) {
+                            // Marcar solo la respuesta realmente seleccionada
+                            if (respActual->respuesta_id == respuestaSeleccionadaId) {
+                                printf("    -> %s <-\n", respActual->respuesta);
+                            } else {
+                                printf("      %s\n", respActual->respuesta);
+                            }
+                        }
+                        respActual = respActual->sgte;
+                    } while (respActual != inicioRespuestas);
+                }
+                printf("\n");
+            }
+            pregActual = pregActual->sgte;
+        }
+        
+        printf("==================================================\n");
+        
+        // Control de errores en el menu
+        int verOtra;
+        intentos = 0;
+        entradaValida = false;
+        
+        do {
+            printf("\nDesea ver otra encuesta respondida? (1: Si, 0: Volver al menu): ");
+            
+            if (scanf("%d", &verOtra) != 1) {
+                limpiarBuffer();
+                printf("Error: Entrada invalida. ");
+                intentos++;
+            } else if (verOtra != 0 && verOtra != 1) {
+                printf("Error: Debe ser 1 o 0. ");
+                intentos++;
+            } else {
+                entradaValida = true;
+            }
+            
+            if (intentos >= 3) {
+                printf("Demasiados intentos fallidos. Volviendo al menu...\n");
+                verOtra = 0;
+                break;
+            }
+        } while (!entradaValida);
+        
+        if (verOtra == 0) {
+            opcionSalir = 1;
+        }
+        clear_screen();
+        
+    } while (opcionSalir == 0);
 }
 
 //--------------------------------------------------------------------------------------------------------------
