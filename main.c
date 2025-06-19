@@ -132,6 +132,8 @@ void eliminarRespuestas(int);
 void buscarBorrar(int num, respuestas **, respuestas **, int *);
 void mostrarEncuestadores(sEncuestador* actual); 
 int verificarIdPregunta(int num, preguntas **);
+int num_pregunta(int num);
+bool idSinProcesar(encuestas *tope, int num);
 
 // Funciones ponderar encuestas
 void ponderarEncuesta(encuestaRespondidas *lista, encuestas **topePila);
@@ -873,6 +875,29 @@ bool idExiste(encuestas *tope, int id) {
     return existe;
 }
 
+bool idSinProcesar(encuestas *tope, int id) {
+    encuestas *temp = NULL;
+    encuestas *nodo = NULL;
+    bool existe = false;
+    
+    // Desapilar y verificar, apilando en temporal
+    while (!vacia(&tope)) {
+        desapilar(&tope, &nodo);
+        if (nodo->encuesta_id == id && nodo->procesada == 0) {
+            existe = true;
+        }
+        apilar(&temp, &nodo);
+    }
+    
+    // Restaurar la pila original
+    while (!vacia(&temp)) {
+        desapilar(&temp, &nodo);
+        apilar(&tope, &nodo);
+    }
+    
+    return existe;
+}
+
 int leerNumeroValidado(const char *mensaje, const char *mensajeError, int min, int max, bool validarUnico, encuestas **tope) {
     char buffer[64];
     int numero;
@@ -999,7 +1024,7 @@ void agregarEncuestador(sEncuestador** lista) {
 respuestas *inicioRespuestas = NULL; //puntero de manera global para la lista enlazada circular
 void crearRespuesta(encuestas** tope){
 
-	int parar = 1, num = 0, verificar = 0;
+	int parar = 1, num = 0, verificar = 0, contador = 0, control = 0;
 	respuestas *ini = NULL, *iniListaAux = NULL, *iniListaAuxAux = NULL;
 	ini = inicioRespuestas;
 	printf("=================================\n");
@@ -1007,37 +1032,45 @@ void crearRespuesta(encuestas** tope){
 	printf("=================================\n");
 	printf("\n");
 
+
     mostrar_encuesta(tope, 0);
     printf("Ingrese el id de encuesta al que desea agregar respuestas.\n");
 	scanf("%d",&num);
-
-    if(!idExiste(*tope, num)){
-        printf("Error, no existe ese id de encuesta.\n");
+    
+    if(!idSinProcesar(*tope, num)){
+        printf("Error, no existe ese id de encuesta o la encuesta ya fue procesada.\n");
         return;
-    }
+    } 
 
     printf("Preguntas disponibles: \n");
     preguntas* auxLista = inicioPreguntas;
     while(auxLista!= NULL){
         if(auxLista->encuesta_id == num){
+            control = 1;
             printf("\n'%s'\nID: %d\n", auxLista->pregunta, auxLista->pregunta_id);
         }
         auxLista = auxLista->sgte;
     }
 
-	printf("Ingrese el id de pregunta al que desea crearle la respuesta\n");
-	scanf("%d",&num);
-
-	verificar = verificarIdPregunta(num, &inicioPreguntas);
-
+    if(control == 0){
+        printf("No hay preguntas disponibles en la encuesta para crear respuestas.\n");
+    } else {
+        printf("Ingrese el id de pregunta al que desea crearle la respuesta\n");
+	    scanf("%d",&num);
+	    verificar = verificarIdPregunta(num, &inicioPreguntas);
+	
 	if(verificar != 1){
 		printf("El id de la respuesta ingresada no existe\n");
 	}
 		else { 
+            contador = num_pregunta(num);
+            if(contador != 0){
+                verificar = 1;
+            } else verificar = 0;
+
 			do {
 				respuestas *aux = (respuestas*)malloc(sizeof(respuestas));
 				aux->pregunta_id = num;
-				printf("pregunta_id guardada: %d\n", aux->pregunta_id);
 				//buscamos el ultimo id de respuesta creado y le sumamos 1
 				if(inicioRespuestas == NULL && iniListaAux == NULL){
 					aux->respuesta_id = 1;
@@ -1054,11 +1087,10 @@ void crearRespuesta(encuestas** tope){
 					}
 				}
 			
-			
-				printf("Ingrese el numero de respuesta\n");
-				scanf("%d",&(aux->respuesta_nro));
-				while(getchar() != '\n'); // Limpiar buffer
-
+                contador = contador + 1;
+				aux->respuesta_nro = contador;
+				
+                while(getchar() != '\n'); //limpiar el buffer porque da quilombo aca
 				printf("Ingrese la respuesta deseada\n");
 				fgets(aux->respuesta, 100, stdin);
 				aux->respuesta[strcspn(aux->respuesta, "\n")] = '\0';
@@ -1075,7 +1107,7 @@ void crearRespuesta(encuestas** tope){
 
     			} while (aux->ponderacion < 0 || aux->ponderacion > 1);
 				
-		
+               
 				//agregamos el nodo a la estructura auxiliar para que despues de que se termine de cargar las respuestas verificar si da 1 la ponderacion
 				if(iniListaAux == NULL){
 				iniListaAux = aux;
@@ -1088,15 +1120,14 @@ void crearRespuesta(encuestas** tope){
 				iniListaAuxAux = iniListaAuxAux->sgte;
 				iniListaAuxAux->sgte = NULL;
 				}	
-			
+                
 				printf("Desea cargar otra respuesta? 1 (si) / 0 (no)\n");
 				scanf("%i",&parar);
 				while(getchar() != '\n'); // Limpiar buffer
 
 			} while(parar != 0);	
 
-            //verificamos si hay alguna respuesta que valga 1
-	    verificar = 0;
+        //verificamos si hay alguna respuesta que valga 1
 	    iniListaAuxAux = iniListaAux;
 	    if(iniListaAuxAux->sgte == NULL){
 		    if(iniListaAuxAux->ponderacion == 1){
@@ -1116,21 +1147,21 @@ void crearRespuesta(encuestas** tope){
 		}
 	
 	    //enlazamos la lista simple auxiliar a la lista circular principal
-	    if(verificar == 1 && inicioRespuestas == NULL){
+	    if(verificar == 1 && inicioRespuestas == NULL && contador >= 2){
 		    inicioRespuestas = iniListaAux;
 		    iniListaAux = NULL;
 		    iniListaAuxAux->sgte = inicioRespuestas;
 		    iniListaAuxAux = NULL;
 		    printf("Respuestas cargadas con exito\n");
 	    }
-		else if(verificar == 1 && inicioRespuestas != NULL){
+		else if(verificar == 1 && inicioRespuestas != NULL && contador >= 2){
 			ini->sgte = iniListaAux;
 			iniListaAux = NULL;
 			iniListaAuxAux->sgte = inicioRespuestas;
 			iniListaAuxAux = NULL;
 			printf("Respuestas cargadas con exito\n");
 		} else{
-			printf("No hay ninguna respuesta que valga 1. No se pudieron cargar las respuestas al sistema\n");
+			printf("Error, no se pudieron cargar las respuestas al sistema.\n No hay ninguna respuesta que valga 1 en la ponderacion o solo cargo 1 respuesta. \n");
 			//borramos la lista auxiliar
 			iniListaAuxAux = iniListaAux;
 			while(iniListaAux != NULL){
@@ -1140,6 +1171,7 @@ void crearRespuesta(encuestas** tope){
 			}
 		} 		
 	}  
+    }
 }
 
 int verificarIdPregunta(int num, preguntas **inicioPreguntas){
@@ -1153,6 +1185,19 @@ int verificarIdPregunta(int num, preguntas **inicioPreguntas){
         } else aux = aux->sgte;
     }
     return verificar;
+}
+
+int num_pregunta(int num){
+    respuestas *aux = inicioRespuestas;
+    int wep = 0;
+    do
+    {
+        if(aux->pregunta_id == num){
+            wep = aux->respuesta_nro;
+        }
+        aux = aux->sgte;
+    } while(aux != inicioRespuestas);
+    return wep;
 }
 
 void mostrarRespuestas(){
