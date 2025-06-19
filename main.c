@@ -83,6 +83,8 @@ void agregarEncuestador(sEncuestador** lista);
 void limpiarBuffer();
 void mostrarEncuestasRespondidasPorID(encuestaRespondidas* listaRespondidas, encuestas** topeEncuestas);
 
+int encuestaCompleta(int encuesta_id);
+
 // Funciones de csv
 encuestaRespondidas* cargarEncuestasRespondidas(
     encuestaRespondidas* lista, 
@@ -374,6 +376,7 @@ void menu_encuestador(encuestas** tope, sEncuestador* listaEncuestadores, encues
 void menu_encuestas(encuestas **tope, encuestaRespondidas* listaEncuestasResp) {
     int opcion;
     char buffer[16];
+    int encuesta_id;
     do {
         printf("=================================\n");
         printf("          MENU ENCUESTAS         \n");
@@ -388,10 +391,8 @@ void menu_encuestas(encuestas **tope, encuestaRespondidas* listaEncuestasResp) {
         printf("=================================\n");
         printf("Seleccione una opcion: ");
 
-        if (fgets(buffer,sizeof(buffer),stdin) != NULL)
-            opcion = atoi(buffer);
-        else
-            opcion = 0;
+        scanf("%d", &opcion);
+        while(getchar() != '\n'); // Limpiar buffer
         
         switch(opcion) {
             case 1:
@@ -406,8 +407,17 @@ void menu_encuestas(encuestas **tope, encuestaRespondidas* listaEncuestasResp) {
                 clear_screen();
                 break;
             case 3:
-                //verificar
-                clear_screen();
+                mostrar_encuesta(tope, 0);
+                printf("\nQue encuesta quiere verificar si esta completa?: ");
+                scanf("%d", &encuesta_id);
+                if(idExiste(*tope, encuesta_id)){
+                    //clear_screen();
+                    encuestaCompleta(encuesta_id);
+                }
+                else{
+                    //clear_screen();
+                    printf("Esa encuesta no existe.\n");
+                }
                 break;
             case 4:
                 //eliminar encuesta
@@ -2280,7 +2290,74 @@ void mostrarEncuestasRespondidasPorID(encuestaRespondidas* listaRespondidas, enc
 
 //--------------------------------------------------------------------------------------------------------------
 
+int encuestaCompleta(int encuesta_id) {
+    /*
+    verifica si una encuesta esta cargada en su totalidad comprobando lo siguiente:
+    1. Tiene al menos una pregunta cargada (el control de que las ponderaciones sumen 1 ya se hace al cargar)
+    2. Cada pregunta cargada tiene al menos una respuesta asociada (el control de que almenos una respuesta sea de ponderacion 1 ya se hace al cargar)
+    
+    Retorna:
+    1: Encuesta completa
+    0: Le faltan respuesta/s
+    -1: Encuesta sin preguntas
+    */
+    int retorno = 1;
+    respuestas* respActual;
+    preguntas* pregActual = inicioPreguntas;
+    int tienePreguntas = 0;
+    int tieneRespuestas;
+    
+    while (pregActual != NULL) {
+        if (pregActual->encuesta_id == encuesta_id) {
+            tienePreguntas = 1;
+            break;
+        }
+        pregActual = pregActual->sgte;
+    }
+    
+    if (tienePreguntas == 1) {     
+        // Verificar que cada pregunta tenga al menos una respuesta
+        pregActual = inicioPreguntas;
+        while (pregActual != NULL) {
+            if (pregActual->encuesta_id == encuesta_id) {
+                tieneRespuestas = 0;
+                respActual = inicioRespuestas;
+                
+                if (respActual != NULL) {
+                    do {
+                        if (respActual->pregunta_id == pregActual->pregunta_id) {
+                            tieneRespuestas = 1;
+                            break;
+                        }
+                        respActual = respActual->sgte;
+                    } while (respActual != inicioRespuestas);
+                }
+                
+                if (tieneRespuestas == 0) {
+                    printf("Pregunta ID %d '%s' no tiene respuestas asociadas\n", pregActual->pregunta_id, pregActual->pregunta);
+                    retorno = 0;  // Pregunta sin respuestas
+                }
+            }
+            pregActual = pregActual->sgte;
+        }
+    }
+    else{
+        retorno = -1;
+    }
+    
+    if(retorno == 1){
+        printf("La encuesta esta completa.\n");
+    }
+    else if(retorno == 0){
+        printf("A la encuesta le faltan respuestas.\n");
+    }
+    else if(retorno == -1){
+        printf("La encuesta no tiene preguntas.\n");
+    }
 
+
+    return retorno; 
+}
 
 
 //sin modificaion de preguntas ni de respuestas!!!!
