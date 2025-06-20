@@ -400,7 +400,6 @@ void menu_encuestas(encuestas **tope, encuestaRespondidas** listaEncuestasResp) 
         printf("3. Verificar que las encuestas esten completas.\n");
         printf("4. Eliminar encuesta\n");
         printf("5. Calcular ponderacion\n");
-        printf("6. Mostrar encuesta especifica\n");
         printf("0. Volver al menu principal\n");
         printf("=================================\n");
         printf("Seleccione una opcion: ");
@@ -441,10 +440,6 @@ void menu_encuestas(encuestas **tope, encuestaRespondidas** listaEncuestasResp) 
             case 5:
                 clear_screen();
                 ponderarEncuesta(*listaEncuestasResp, tope);
-                break;
-            case 6:
-                //mostrar encuesta por id
-                clear_screen();
                 break;
             case 0:
                 clear_screen();
@@ -1131,7 +1126,6 @@ void crearRespuesta(encuestas** tope){
                 
 				printf("Desea cargar otra respuesta? 1 (si) / 0 (no)\n");
 				scanf("%i",&parar);
-				while(getchar() != '\n'); // Limpiar buffer
 
 			} while(parar != 0);	
 
@@ -1833,7 +1827,9 @@ encuestaRespondidas* cargarManualEncuestaRespondida(
 
     printf("Respuestas disponibles: \n");
     respuestas* auxListaRes = inicioRespuestas->sgte;
-    printf("ID: %d\n'%s'\n\n", inicioRespuestas->respuesta_id, inicioRespuestas->respuesta);
+    if(inicioRespuestas->pregunta_id == pregunta_id){
+        printf("ID: %d\n'%s'\n\n", inicioRespuestas->respuesta_id, inicioRespuestas->respuesta);
+    }
     while(auxListaRes != inicioRespuestas){
         if(auxListaRes->pregunta_id == pregunta_id){
             printf("ID: %d\n'%s'\n\n", auxListaRes->respuesta_id, auxListaRes->respuesta);
@@ -1858,7 +1854,7 @@ encuestaRespondidas* cargarManualEncuestaRespondida(
                 respuesta_ptr = NULL;
             }
         }
-    } while (pregunta_ptr == NULL);
+    } while (respuesta_ptr == NULL);
 
     check = 1;
     // Validación de fecha (AAAAMMDD)
