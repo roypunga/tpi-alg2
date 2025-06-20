@@ -109,6 +109,7 @@ void buscarIdsParaABB(encuestaRespondidas* inicio, encuestas* tope);
 bool verificarSiExisteNodo(nodoABB* raiz, int id);
 void crecer(nodoABB** raiz, nodoABB** aux);
 void PrintearInOrder(nodoABB* raiz);
+void borrarArbol(nodoABB** raiz);
 
 // Funciones para cargar datos de ejemplo
 void agregarPregunta(int encuesta_id, int pregunta_id, const char* pregunta, float ponderacion);
@@ -2006,6 +2007,8 @@ void buscarIdsParaABB(encuestaRespondidas* inicio, encuestas* tope) {
                 PrintearInOrder(Raiz);
             }
 
+            void borrarArbol(nodoABB * *raiz);
+
         }
         else if(id == -1){
             printf("\nSaliendo...");
@@ -2068,6 +2071,16 @@ void PrintearInOrder(nodoABB* raiz) {
         PrintearInOrder(raiz->der);
     }
 }
+
+void borrarArbol(nodoABB** raiz) {
+    if (*raiz != NULL) {
+        borrarArbol(&((*raiz)->izq));
+        borrarArbol(&((*raiz)->der));
+        free(*raiz);
+        *raiz = NULL;
+    }
+}
+
 
 //-------------------------------------------------------------------------------------------------------- 
 
