@@ -252,6 +252,7 @@ void menu_administrador(encuestas **tope, sEncuestador** listaEncuestadores, enc
         printf("2. Preguntas\n");
         printf("3. Respuestas\n");
         printf("4. Encuestadores\n");
+        printf("5. Crear arbol binario\n");
         printf("0. Salir\n");
         printf("=================================\n");
         printf("Seleccione una opcion: ");
@@ -274,6 +275,10 @@ void menu_administrador(encuestas **tope, sEncuestador** listaEncuestadores, enc
             case 4:
                 clear_screen();
                 menu_AdmEncuestadores(listaEncuestadores);
+                break;
+            case 5:
+                clear_screen();
+                buscarIdsParaABB(*listaEncuestasResp, *tope);
                 break;
             case 0:
                 printf("Cerrando sesion...\n");
@@ -1957,10 +1962,13 @@ int esEncuestaRespondidaDuplicada(encuestaRespondidas* lista, encuestaRespondida
 //----------------------------Arbolito de navidad--------------------------------------------------------
 
 void buscarIdsParaABB(encuestaRespondidas* inicio, encuestas* tope) {
-    int id, usrChoice=1, mostrar = 0;
+    int id, usrChoice=1, mostrar = 0, hayAlguno = 0;
     nodoABB* Raiz = NULL;
     
     if (inicio != NULL) {
+
+        printf("Encuestas disponibles:\n");
+        mostrar_encuesta(&tope, 0);
 
         printf("\nBienvenido al asistente de creacion de arbol binario de busqueda de encuestas respondidas, por favor ingrese el id de ecnuesta sobre el que desea trabajar, -1 para salir: ");
         scanf("%d", &id);
@@ -1980,7 +1988,7 @@ void buscarIdsParaABB(encuestaRespondidas* inicio, encuestas* tope) {
                 if ((inicio->encuesta_id == id) && (verificarSiExisteNodo(Raiz, inicio->encuestarResondida_id) == false)) { //si coincide el idEncuesta de encuestaRespondida y no esta cargado ya en el arbol;
 
                     nodoABB* nv_nodo = (nodoABB*)malloc(sizeof(nodoABB)); //crear nuevo nodo del arbol
-
+                    hayAlguno = 1;
                     if (nv_nodo != NULL) {
 
                         nv_nodo->idEncuesta = id;
@@ -2000,14 +2008,19 @@ void buscarIdsParaABB(encuestaRespondidas* inicio, encuestas* tope) {
                 inicio = inicio->sgte;
 
             }
+            if(hayAlguno == 0){
+                printf("No hay ninguna respuesta cargada a la encuesta de id %d", id);
+            }
 
             printf("\nDesea mostrar el arbol generado? (1=Si, 0=No): ");
             scanf("%d", &mostrar);
             if (mostrar == 1) {
+                printf("IDs de encuestaRespondida correspondientes a la encuesta de id %d:", id);
                 PrintearInOrder(Raiz);
+                printf("\n");
             }
 
-            void borrarArbol(nodoABB * *raiz);
+            borrarArbol(&Raiz);
 
         }
         else if(id == -1){
@@ -2067,7 +2080,7 @@ void crecer(nodoABB** raiz, nodoABB** aux){
 void PrintearInOrder(nodoABB* raiz) {
     if (raiz != NULL) {
         PrintearInOrder(raiz->izq);
-        printf("\n%d", raiz->idEncustaRespondida);
+        printf("\n\t%d", raiz->idEncustaRespondida);
         PrintearInOrder(raiz->der);
     }
 }
