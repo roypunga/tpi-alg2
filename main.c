@@ -106,6 +106,7 @@ int esEncuestaRespondidaDuplicada(encuestaRespondidas* lista, encuestaRespondida
 
 //Funciones del plantin
 void buscarIdsParaABB(encuestaRespondidas* inicio, encuestas* tope);
+bool verificarSiExisteNodo(nodoABB* raiz, int id);
 void crecer(nodoABB** raiz, nodoABB** aux);
 void PrintearInOrder(nodoABB* raiz);
 
@@ -324,7 +325,7 @@ void menu_encuestador(encuestas** tope, sEncuestador* listaEncuestadores, encues
     int opcion;
     
     do {
-        printf("=================================\n");
+        printf("\n=================================\n");
         printf("        MENU ENCUESTADOR         \n");
         printf("=================================\n");
         printf("1. Cargar respuestas desde archivo CSV\n");
@@ -332,6 +333,7 @@ void menu_encuestador(encuestas** tope, sEncuestador* listaEncuestadores, encues
         printf("3. Mostrar todos los registros de encuestas respondidas\n");
         printf("4. Calcular ponderaciones\n");
         printf("5. Mostrar encuesta especifica (por ID)\n");
+        printf("6. Crear arbol binario de una determinada encuesta\n");
         printf("0. Volver al menu principal\n");
         printf("=================================\n");
         printf("Seleccione una opcion: ");
@@ -364,6 +366,10 @@ void menu_encuestador(encuestas** tope, sEncuestador* listaEncuestadores, encues
                 //printf("\n--- Buscar por ID ---\n");
                 // Función para mostrar encuesta por ID iría aquí
                 mostrarEncuestasRespondidasPorID(*listaRespondidas,tope);
+                break;
+            case 6:
+                clear_screen();
+                buscarIdsParaABB(*listaRespondidas, *tope);
                 break;
             case 0:
                 clear_screen();
@@ -677,8 +683,7 @@ void crear_encuesta(encuestas **tope) {
         // Menú de opciones después de crear
         printf("\nQue desea hacer ahora?\n");
         printf("1. Crear otra encuesta\n");
-        printf("2. Volver al menu encuestas\n");
-        printf("0. Salir del programa\n");
+        printf("0. Volver al menu encuestas\n");
         printf("Seleccione una opcion: ");
 
         if (fgets(buffer, sizeof(buffer), stdin) != NULL) {
@@ -691,12 +696,9 @@ void crear_encuesta(encuestas **tope) {
             case 1:
                 clear_screen();
                 break;
-            case 2:
+            case 0:
                 clear_screen();
                 return;
-            case 0:
-                printf("\nSaliendo del programa...\n");
-                exit(0);
             default:
                 printf("\nOpcion no valida. Volviendo al menu principal.\n");
                 clear_screen();
@@ -1333,7 +1335,7 @@ void crearPreguntas(encuestas* tope) {
                                 scanf("%f", &ponderacionPregunta);
                                 limpiarBuffer();
 
-                                if ((ponderacionPregunta > (ponderacionDisponible + EPSILON)) || (ponderacionPregunta < 0.01)) {
+                                if ((ponderacionPregunta > (ponderacionDisponible + EPSILON)) || (ponderacionPregunta < 0.01 - EPSILON)) {
 
                                     do {
 
@@ -1954,56 +1956,91 @@ int esEncuestaRespondidaDuplicada(encuestaRespondidas* lista, encuestaRespondida
 //----------------------------Arbolito de navidad--------------------------------------------------------
 
 void buscarIdsParaABB(encuestaRespondidas* inicio, encuestas* tope) {
-    int id, usrChoice;
+    int id, usrChoice=1, mostrar = 0;
     nodoABB* Raiz = NULL;
+    
+    if (inicio != NULL) {
 
-    do {
-
-        printf("\nIngrese el id de la encuesta de la que quiere crear el tree (corte bilinwe): ");
+        printf("\nBienvenido al asistente de creacion de arbol binario de busqueda de encuestas respondidas, por favor ingrese el id de ecnuesta sobre el que desea trabajar, -1 para salir: ");
         scanf("%d", &id);
-        
-        if (idExiste(tope, id) == 0) {
 
+        if (validarIdEncuesta(&tope, id) == false && id != -1) {
             do {
+                printf("\nError: Id no encontrado, ingrese otro o -1 para salir");
+                scanf("%d", &id);
 
-                if (inicio->encuesta_id == id) {
+            } while (validarIdEncuesta(&tope, id) == false && id != -1);
+        }
 
-                    nodoABB* nv_nodo = (nodoABB*)malloc(sizeof(nodoABB));
+        if(id != -1) {
+
+            while (inicio != NULL) {
+
+                if ((inicio->encuesta_id == id) && (verificarSiExisteNodo(Raiz, inicio->encuestarResondida_id) == false)) { //si coincide el idEncuesta de encuestaRespondida y no esta cargado ya en el arbol;
+
+                    nodoABB* nv_nodo = (nodoABB*)malloc(sizeof(nodoABB)); //crear nuevo nodo del arbol
 
                     if (nv_nodo != NULL) {
 
                         nv_nodo->idEncuesta = id;
+                        nv_nodo->idEncustaRespondida = inicio->encuestarResondida_id;
                         nv_nodo->der = NULL;
                         nv_nodo->izq = NULL;
-                        nv_nodo->idEncustaRespondida = inicio->encuestarResondida_id;
+
                         crecer(&Raiz, &nv_nodo);
 
                     }
                     else {
-                        printf("\nError de creacion de NODO!!");
+                        printf("\nError: no fue posible crear nodo");
                     }
 
                 }
 
                 inicio = inicio->sgte;
 
-            } while (inicio != NULL);
+            }
+
+            printf("\nDesea mostrar el arbol generado? (1=Si, 0=No): ");
+            scanf("%d", &mostrar);
+            if (mostrar == 1) {
+                PrintearInOrder(Raiz);
+            }
 
         }
-        else {
-            printf("\nId no existe, quiere probar con otro? ");
-            scanf("%d", &usrChoice);
+        else if(id == -1){
+            printf("\nSaliendo...");
         }
 
-    } while (usrChoice == 1);
-
-    printf("\nDesea mostrar el arbol recien creado? \n\t1.Si.\n\t0.No, deja de romper");
-    scanf("%d", &usrChoice);
-
-    if (usrChoice == 1) {
-        PrintearInOrder(Raiz);
+    }
+    else {
+        printf("\nLista de encuestas respondidas vacia");
     }
 
+}
+
+bool verificarSiExisteNodo(nodoABB* raiz, int id) {
+    bool res = false;
+
+    if (raiz == NULL) {
+
+        return res;
+
+    }
+    else {
+        if (raiz->idEncustaRespondida == id) {
+            res = true;
+        }
+        else {
+            if (raiz->idEncustaRespondida > id) {
+                return verificarSiExisteNodo(raiz->izq, id);
+            }
+            else {
+                if (raiz->idEncustaRespondida < id) {
+                    return verificarSiExisteNodo(raiz->der, id);
+                }
+            }
+        }
+    }
 }
 
 void crecer(nodoABB** raiz, nodoABB** aux){
@@ -2013,11 +2050,11 @@ void crecer(nodoABB** raiz, nodoABB** aux){
         (*raiz)->der = NULL;
 	}
 	else {
-        if (&(*raiz)->idEncustaRespondida > &(*aux)->idEncustaRespondida) {
+        if ((*raiz)->idEncustaRespondida > (*aux)->idEncustaRespondida) {
             crecer(&(*raiz)->izq , aux);
         }
         else {
-            if (&(*raiz)->idEncustaRespondida < &(*aux)->idEncustaRespondida) {
+            if ((*raiz)->idEncustaRespondida < (*aux)->idEncustaRespondida) {
                 crecer(&(*raiz)->der, aux);
             }
         }
@@ -2029,9 +2066,6 @@ void PrintearInOrder(nodoABB* raiz) {
         PrintearInOrder(raiz->izq);
         printf("\n%d", raiz->idEncustaRespondida);
         PrintearInOrder(raiz->der);
-    }
-    else {
-        printf("\nNada mas para imprimir");
     }
 }
 
