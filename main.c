@@ -139,6 +139,7 @@ bool idSinProcesar(encuestas *tope, int num);
 
 // Funciones ponderar encuestas
 void ponderarEncuesta(encuestaRespondidas *lista, encuestas **topePila);
+void ponderarEncuestaId(encuestaRespondidas *lista);
 
 preguntas* inicioPreguntas = NULL; //puntero de manera global para la lista enlazada simple
 //Prueba de pasar el tope desde main hasta crear_encuesta 
@@ -338,8 +339,9 @@ void menu_encuestador(encuestas** tope, sEncuestador* listaEncuestadores, encues
         printf("2. Ingresar respuestas manualmente\n");
         printf("3. Mostrar todos los registros de encuestas respondidas\n");
         printf("4. Calcular ponderaciones\n");
-        printf("5. Mostrar encuesta especifica (por ID)\n");
+        printf("5. Calcular ponderacion especifica (por ID)\n");
         printf("6. Crear arbol binario de una determinada encuesta\n");
+        printf("7. Mostrar encuesta especifica (por ID)\n");
         printf("0. Volver al menu principal\n");
         printf("=================================\n");
         printf("Seleccione una opcion: ");
@@ -369,13 +371,17 @@ void menu_encuestador(encuestas** tope, sEncuestador* listaEncuestadores, encues
                 break;
             case 5:
                 clear_screen();
-                //printf("\n--- Buscar por ID ---\n");
-                // Función para mostrar encuesta por ID iría aquí
-                mostrarEncuestasRespondidasPorID(*listaRespondidas,tope);
+                printf("\n--- Ponderacion por ID ---\n");
+                ponderarEncuestaId(*listaRespondidas);
                 break;
             case 6:
                 clear_screen();
                 buscarIdsParaABB(*listaRespondidas, *tope);
+                break;
+            case 7:
+                printf("\n--- Buscar por ID ---\n");
+                mostrarEncuestasRespondidasPorID(*listaRespondidas,tope);
+                clear_screen();
                 break;
             case 0:
                 clear_screen();
@@ -2141,6 +2147,31 @@ void ponderarEncuesta(encuestaRespondidas *lista, encuestas **topePila){
     }   
 
 }
+
+void ponderarEncuestaId(encuestaRespondidas *lista){
+
+    int  encontrado = 0, num = 0, idEncuesta = 0;
+    float ponderacion = 0;
+    encuestaRespondidas *auxLista = lista;
+
+    mostrarEncuestasRespondidas(lista);
+    printf("Ingrese el id de la respuesta que desea ponderar (Id de encuesta respondida)\n");
+    scanf("%d", &num);
+
+    while(auxLista != NULL){
+            if(auxLista->encuestarResondida_id == num){
+                idEncuesta = auxLista->encuesta_id;
+                    ponderacion = ponderacion + ((auxLista->pregunta_id->ponderacion) * (auxLista->respuesta_id->ponderacion));
+                    encontrado = 1;
+            }
+            auxLista = auxLista->sgte;
+        }
+
+        if(encontrado == 1){
+            printf("La respuesta %d (de la encuesta %d), tiene una ponderacion total de: %.2f\n", num, idEncuesta, ponderacion);
+        }else printf("La respuesta %d, no existe.\n", num);  
+}
+
 
 //-------------------------------------------------------------------------------------------------------- 
 
