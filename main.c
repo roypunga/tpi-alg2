@@ -63,86 +63,85 @@ typedef struct nodoABB {
 }nodoABB;
 
 //Funciones de menu y login
-void menu_encuestas(encuestas **tope, encuestaRespondidas** listaEncuestasResp);
-void menu_preguntas(encuestas* tope);
-void menu_respuestas(encuestaRespondidas** listaRespondidas, sEncuestador* listaEncuestadores, encuestas** tope);
-void menu_administrador(encuestas **tope, sEncuestador** listaEncuestadores, encuestaRespondidas** listaEncuestasResp);
-void menu_encuestador(encuestas** tope, sEncuestador* listaEncuestadores, encuestaRespondidas** listaRespondidas);
-void menu_AdmEncuestadores(sEncuestador** listaEncuestadores);
+void menu_encuestas(encuestas **tope, encuestaRespondidas** listaEncuestasResp); //Roy Ruiz
+void menu_preguntas(encuestas* tope); //Roy Ruiz
+void menu_respuestas(encuestaRespondidas** listaRespondidas, sEncuestador* listaEncuestadores, encuestas** tope); //Roy Ruiz
+void menu_administrador(encuestas **tope, sEncuestador** listaEncuestadores, encuestaRespondidas** listaEncuestasResp); //Roy Ruiz
+void menu_encuestador(encuestas** tope, sEncuestador* listaEncuestadores, encuestaRespondidas** listaRespondidas); //Roy Ruiz
+void menu_AdmEncuestadores(sEncuestador** listaEncuestadores); //Roy Ruiz
+int login(sEncuestador* lista); // Roy Ruiz
 // Funciones de manejo de encuestas
-void mostrar_encuesta(encuestas **tope,int interactivo);
-void crear_encuesta(encuestas **tope);
-void eliminar_encuesta(encuestas **tope);
-int login(sEncuestador* lista);
-void apilar(encuestas **tope, encuestas **nv);
-void desapilar(encuestas **tope, encuestas **nodo_desapilado);
-int vacia(encuestas **tope);
-bool idExiste(encuestas *tope, int id);
-int leerNumeroValidado(const char *mensaje, const char *mensajeError, int min, int max, bool validarUnico, encuestas **tope);
-void agregarEncuestador(sEncuestador** lista);
-void limpiarBuffer();
-void mostrarEncuestasRespondidasPorID(encuestaRespondidas* listaRespondidas, encuestas** topeEncuestas);
+void mostrar_encuesta(encuestas **tope,int interactivo); // Pitter Dos Santos
+void crear_encuesta(encuestas **tope); // Pitter Dos Santos
+void eliminar_encuesta(encuestas **tope); // Pitter Dos Santos
+void apilar(encuestas **tope, encuestas **nv); // Pitter Dos Santos
+void desapilar(encuestas **tope, encuestas **nodo_desapilado); // Pitter Dos Santos
+int vacia(encuestas **tope); // Pitter Dos Santos
+bool idExiste(encuestas *tope, int id); // Pitter Dos Santos
+int leerNumeroValidado(const char *mensaje, const char *mensajeError, int min, int max, bool validarUnico, encuestas **tope); // Pitter Dos Santos
+void agregarEncuestador(sEncuestador** lista); // Roy Ruiz
+void limpiarBuffer(); // Roy Ruiz
+void mostrarEncuestasRespondidasPorID(encuestaRespondidas* listaRespondidas, encuestas** topeEncuestas); // Pitter Dos Santos
 
-int encuestaCompleta(int encuesta_id);
+int encuestaCompleta(int encuesta_id); // Roy Ruiz
 
 // Funciones de csv
 encuestaRespondidas* cargarEncuestasRespondidas(
     encuestaRespondidas* lista, 
     sEncuestador* listaEncuestadores,
     encuestas** topePila
-);
+); //Roy Ruiz
 
 encuestaRespondidas* cargarManualEncuestaRespondida(
     encuestaRespondidas* lista, 
     sEncuestador* listaEncuestadores,
     encuestas *tope
-);
+); //Roy Ruiz
 
-preguntas* buscarPregunta(int id_pregunta);
-respuestas* buscarRespuesta(int id_respuesta);
-sEncuestador* buscarEncuestador(sEncuestador* lista, int id);
-void mostrarEncuestasRespondidas(encuestaRespondidas* lista);
-int esEncuestaRespondidaDuplicada(encuestaRespondidas* lista, encuestaRespondidas* nodo);
+preguntas* buscarPregunta(int id_pregunta); //Roy Ruiz
+respuestas* buscarRespuesta(int id_respuesta); //Roy Ruiz
+sEncuestador* buscarEncuestador(sEncuestador* lista, int id); //Roy Ruiz
+void mostrarEncuestasRespondidas(encuestaRespondidas* lista); //Roy Ruiz
+int esEncuestaRespondidaDuplicada(encuestaRespondidas* lista, encuestaRespondidas* nodo); //Roy Ruiz
 
 //Funciones del plantin
-void buscarIdsParaABB(encuestaRespondidas* inicio, encuestas* tope);
-bool verificarSiExisteNodo(nodoABB* raiz, int id);
-void crecer(nodoABB** raiz, nodoABB** aux);
-void PrintearInOrder(nodoABB* raiz);
-void borrarArbol(nodoABB** raiz);
+void buscarIdsParaABB(encuestaRespondidas* inicio, encuestas* tope); // Santiago Halberstadt
+bool verificarSiExisteNodo(nodoABB* raiz, int id); // Santiago Halberstadt
+void crecer(nodoABB** raiz, nodoABB** aux); // Santiago Halberstadt
+void PrintearInOrder(nodoABB* raiz); // Santiago Halberstadt
+void borrarArbol(nodoABB** raiz); // Santiago Halberstadt
 
 // Funciones para cargar datos de ejemplo
-void agregarPregunta(int encuesta_id, int pregunta_id, const char* pregunta, float ponderacion);
-void agregarRespuesta(int pregunta_id, int respuesta_id, int respuesta_nro, const char* respuesta, float ponderacion);
-void cargarDatosEjemplo(encuestas** topeEncuestas);
+void agregarPregunta(int encuesta_id, int pregunta_id, const char* pregunta, float ponderacion); // Roy Ruiz
+void agregarRespuesta(int pregunta_id, int respuesta_id, int respuesta_nro, const char* respuesta, float ponderacion); // Roy Ruiz
+void cargarDatosEjemplo(encuestas** topeEncuestas); // Roy Ruiz
 
 
 // Funciones para CRUD de preguntas
-void insertarInicio(preguntas** Ini, preguntas*nodo);
-int obtenerIdPregunta(preguntas* InicioLista);
-void crearPreguntas(encuestas* tope);
-void mostrarPreguntas(int idEncuesta, encuestas* tope, preguntas* inicioListaPreguntas);
-void eliminarPregunta(preguntas** Ini, int idEncuesta);
-bool validarIdEncuesta(encuestas** tope, int id);
-bool verificarProcesado(encuestas** tope, int id);
-bool verificarPreguntas(preguntas* inicioListaPreguntas, int id);
+void insertarInicio(preguntas** Ini, preguntas*nodo); //Santiago Halberstadt
+int obtenerIdPregunta(preguntas* InicioLista); //Santiago Halberstadt
+void crearPreguntas(encuestas* tope); //Santiago Halberstadt
+void mostrarPreguntas(int idEncuesta, encuestas* tope, preguntas* inicioListaPreguntas); //Santiago Halberstadt
+void eliminarPregunta(preguntas** Ini, int idEncuesta); //Santiago Halberstadt
+bool validarIdEncuesta(encuestas** tope, int id); //Santiago Halberstadt
+bool verificarProcesado(encuestas** tope, int id); //Santiago Halberstadt
+bool verificarPreguntas(preguntas* inicioListaPreguntas, int id); //Santiago Halberstadt
 
 // Funciones para CRUD de respuestas
-void crearRespuesta(encuestas** tope);
-void mostrarRespuestas();
-void eliminarRespuestas(int);
-void buscarBorrar(int num, respuestas **, respuestas **, int *);
-void mostrarEncuestadores(sEncuestador* actual); 
-int verificarIdPregunta(int num, preguntas **);
-int num_pregunta(int num);
-bool idSinProcesar(encuestas *tope, int num);
+void crearRespuesta(encuestas** tope); // Martin Kalesplaner
+void mostrarRespuestas(); // Martin Kalesplaner
+void eliminarRespuestas(int); // Martin Kalesplaner
+void buscarBorrar(int num, respuestas **, respuestas **, int *); // Martin Kalesplaner
+void mostrarEncuestadores(sEncuestador* actual);  // Martin Kalesplaner
+int verificarIdPregunta(int num, preguntas **); // Martin Kalesplaner
+int num_pregunta(int num); // Martin Kalesplaner
+bool idSinProcesar(encuestas *tope, int num); // Martin Kalesplaner
 
 // Funciones ponderar encuestas
-void ponderarEncuesta(encuestaRespondidas *lista, encuestas **topePila);
-void ponderarEncuestaId(encuestaRespondidas *lista);
+void ponderarEncuesta(encuestaRespondidas *lista, encuestas **topePila); //Martin Kalesplaner
+void ponderarEncuestaId(encuestaRespondidas *lista); //Martin Kalesplaner
 
-preguntas* inicioPreguntas = NULL; //puntero de manera global para la lista enlazada simple
-//Prueba de pasar el tope desde main hasta crear_encuesta 
+preguntas* inicioPreguntas = NULL; //puntero de manera global para la lista enlazada simple 
 int main() {
     sEncuestador* listaEncuestadores = NULL;
     encuestas *tope = NULL;
