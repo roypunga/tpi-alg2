@@ -1794,9 +1794,12 @@ encuestaRespondidas* cargarManualEncuestaRespondida(
             printf("Error ese id de encuesta no existe, pruebe nuevamente.\n");
         }
 
-        printf("ID de Encuesta (ej. 15): ");
+        printf("ID de Encuesta (-1 para cancelar): ");
         check = scanf("%d", &encuesta_id);
         limpiarBuffer();
+        if(encuesta_id == -1){
+            return lista;
+        }
         checkExiste = idExiste(tope, encuesta_id);
 
     } while (check != 1 || !checkExiste);
@@ -1819,9 +1822,12 @@ encuestaRespondidas* cargarManualEncuestaRespondida(
             printf("Error de lectura, unicamente valores enteros.\n");
         }
 
-        printf("ID de Pregunta (ej. 325): ");
+        printf("ID de Pregunta (-1 para cancelar): ");
         check = scanf("%d", &pregunta_id);
         limpiarBuffer();
+        if(pregunta_id == -1){
+            return lista;
+        }
         if (check == 1) {
             pregunta_ptr = buscarPregunta(pregunta_id);
             if (pregunta_ptr == NULL) {
@@ -1832,6 +1838,7 @@ encuestaRespondidas* cargarManualEncuestaRespondida(
                 pregunta_ptr = NULL;
             }
         }
+
     } while (pregunta_ptr == NULL);
 
     check = 1;
@@ -1854,9 +1861,12 @@ encuestaRespondidas* cargarManualEncuestaRespondida(
         if(check != 1){
             printf("Error de lectura, unicamente valores enteros.\n");
         }
-        printf("ID de Pregunta (ej. 666): ");
+        printf("ID de Pregunta (-1 para cancelar): ");
         check = scanf("%d", &respuesta_id);
         limpiarBuffer();
+        if(respuesta_id == -1){
+            return lista;
+        }
         if (check == 1) {
             respuesta_ptr = buscarRespuesta(respuesta_id);
             if (respuesta_ptr == NULL) {
