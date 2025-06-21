@@ -161,7 +161,7 @@ int main() {
 
 
     //carga de datos de ejemplo
-    cargarDatosEjemplo(&tope);
+    //cargarDatosEjemplo(&tope);
     
     do{
         control = login(listaEncuestadores);
@@ -1032,7 +1032,7 @@ void agregarEncuestador(sEncuestador** lista) {
 respuestas *inicioRespuestas = NULL; //puntero de manera global para la lista enlazada circular
 void crearRespuesta(encuestas** tope){
 
-	int parar = 1, num = 0, verificar = 0, contador = 0, control = 0;
+	int parar = 1, num = 0, verificar = 0, contador = 0, control = 0, numEncuesta = 0;
 	respuestas *ini = NULL, *iniListaAux = NULL, *iniListaAuxAux = NULL;
 	ini = inicioRespuestas;
 	printf("=================================\n");
@@ -1043,17 +1043,17 @@ void crearRespuesta(encuestas** tope){
 
     mostrar_encuesta(tope, 0);
     printf("Ingrese el id de encuesta al que desea agregar respuestas.\n");
-	scanf("%d",&num);
+	scanf("%d",&numEncuesta);
     
-    if(!idSinProcesar(*tope, num)){
+    if(!idSinProcesar(*tope, numEncuesta)){
         printf("Error, no existe ese id de encuesta o la encuesta ya fue procesada.\n");
         return;
     } 
 
     printf("Preguntas disponibles: \n");
-    preguntas* auxLista = inicioPreguntas;
+    preguntas* auxLista = inicioPreguntas, *auxLista1 = NULL;
     while(auxLista!= NULL){
-        if(auxLista->encuesta_id == num){
+        if(auxLista->encuesta_id == numEncuesta){
             control = 1;
             printf("\n'%s'\nID: %d\n", auxLista->pregunta, auxLista->pregunta_id);
         }
@@ -1066,10 +1066,16 @@ void crearRespuesta(encuestas** tope){
         printf("Ingrese el id de pregunta al que desea crearle la respuesta\n");
 	    scanf("%d",&num);
 	    verificar = verificarIdPregunta(num, &inicioPreguntas);
+        auxLista1 = buscarPregunta(num);
+        if(auxLista1->encuesta_id == numEncuesta){
+
+        }
 	
 	if(verificar != 1){
 		printf("El id de la respuesta ingresada no existe\n");
-	}
+	} else if(auxLista1->encuesta_id != numEncuesta){
+        printf("El id de respuesta no es de esta encuesta\n");
+    }
 		else { 
             contador = num_pregunta(num);
             if(contador != 0){
