@@ -310,8 +310,8 @@ int opcion;
         
         switch(opcion) {
             case 1:
-                agregarEncuestador(listaEncuestadores);
                 clear_screen();
+                agregarEncuestador(listaEncuestadores);
                 break;
             case 2:
                 clear_screen();
@@ -983,12 +983,7 @@ void mostrarEncuestadores(sEncuestador* actual) {
 }
 
 void agregarEncuestador(sEncuestador** lista) {
-    // Crear nuevo nodo
-    sEncuestador* nuevo = (sEncuestador*)malloc(sizeof(sEncuestador));
-    if (nuevo == NULL) {
-        printf("Error: No se pudo asignar memoria.\n");
-        return;
-    }
+
 
     char nombre[30], pass[15];
     int lectura_correcta, id;
@@ -1012,6 +1007,14 @@ void agregarEncuestador(sEncuestador** lista) {
             printf("Error en la lectura. ");
         }
     } while (lectura_correcta != 1);
+
+    sEncuestador* aux = *lista;
+    while(aux != NULL){
+        if(aux->encuestador_id == id){
+            printf("Error, ya existe ese id.\n");
+            return;
+        }
+    }
     
     // Lectura del password con validación
     do {
@@ -1023,6 +1026,12 @@ void agregarEncuestador(sEncuestador** lista) {
         }
     } while (lectura_correcta != 1);
 
+    // Crear nuevo nodo
+    sEncuestador* nuevo = (sEncuestador*)malloc(sizeof(sEncuestador));
+    if (nuevo == NULL) {
+        printf("Error: No se pudo asignar memoria.\n");
+        return;
+    }
     // Configurar el nuevo nodo
     nuevo->encuestador_id = id;
     strcpy(nuevo->nombre, nombre);
