@@ -574,7 +574,7 @@ void mostrar_encuesta(encuestas **tope, int interactivo) {
         printf("No hay encuestas cargadas.\n");
 
         if (interactivo) {
-            printf("\nPresione ENTER para volver al menu...");
+            printf("\nPresione dos veces ENTER para volver al menu...");
             getchar(); // Espera ENTER
         }
 
