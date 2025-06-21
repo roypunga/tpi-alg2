@@ -2167,7 +2167,7 @@ void ponderarEncuestaId(encuestaRespondidas *lista){
         }
 
         if(encontrado == 1){
-            printf("La respuesta %d (de la encuesta %d), tiene una ponderacion total de: %.2f\n", num, idEncuesta, ponderacion);
+            printf("La respuesta %d (de la encuesta %d), tiene una ponderacion total de: %.2f\n", num, idEncuesta, (ponderacion*100));
         }else printf("La respuesta %d, no existe.\n", num);  
 }
 
