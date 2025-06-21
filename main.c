@@ -405,6 +405,7 @@ void menu_encuestas(encuestas **tope, encuestaRespondidas** listaEncuestasResp) 
         printf("3. Verificar que las encuestas esten completas.\n");
         printf("4. Eliminar encuesta\n");
         printf("5. Calcular ponderacion\n");
+        printf("6. Calcular ponderacion por id\n");
         printf("0. Volver al menu principal\n");
         printf("=================================\n");
         printf("Seleccione una opcion: ");
@@ -445,6 +446,11 @@ void menu_encuestas(encuestas **tope, encuestaRespondidas** listaEncuestasResp) 
             case 5:
                 clear_screen();
                 ponderarEncuesta(*listaEncuestasResp, tope);
+                break;
+            case 6:
+                clear_screen();
+                printf("\n--- Ponderacion por ID ---\n");
+                ponderarEncuestaId(*listaEncuestasResp);
                 break;
             case 0:
                 clear_screen();
