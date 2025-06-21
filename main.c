@@ -1067,16 +1067,14 @@ void crearRespuesta(encuestas** tope){
 	    scanf("%d",&num);
 	    verificar = verificarIdPregunta(num, &inicioPreguntas);
         auxLista1 = buscarPregunta(num);
-        if(auxLista1->encuesta_id == numEncuesta){
 
-        }
-	
 	if(verificar != 1){
 		printf("El id de la respuesta ingresada no existe\n");
 	} else if(auxLista1->encuesta_id != numEncuesta){
         printf("El id de respuesta no es de esta encuesta\n");
     }
 		else { 
+            printf("ENTRE ACA Y DIO QUILOMBO");
             contador = num_pregunta(num);
             if(contador != 0){
                 verificar = 1;
@@ -1201,15 +1199,19 @@ int verificarIdPregunta(int num, preguntas **inicioPreguntas){
 }
 
 int num_pregunta(int num){
-    respuestas *aux = inicioRespuestas;
     int wep = 0;
-    do
-    {
-        if(aux->pregunta_id == num){
-            wep = aux->respuesta_nro;
-        }
-        aux = aux->sgte;
+    if(inicioRespuestas == NULL){
+        wep = 0;
+    } else{
+            respuestas *aux = inicioRespuestas;
+        do
+        {
+            if(aux->pregunta_id == num){
+                wep = aux->respuesta_nro;
+            }
+            aux = aux->sgte;
     } while(aux != inicioRespuestas);
+    }
     return wep;
 }
 
