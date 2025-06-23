@@ -161,7 +161,7 @@ int main() {
 
 
     //carga de datos de ejemplo
-    //cargarDatosEjemplo(&tope);
+    cargarDatosEjemplo(&tope);
     
     do{
         control = login(listaEncuestadores);
@@ -2254,47 +2254,47 @@ void agregarRespuesta(int pregunta_id, int respuesta_id, int respuesta_nro, cons
 
 // Función principal para cargar todos los datos
 void cargarDatosEjemplo(encuestas** topeEncuestas) {
-    // Crear y cargar encuesta
+    // Crear y cargar encuesta principal
     encuestas* nuevaEncuesta = (encuestas*)malloc(sizeof(encuestas));
-    nuevaEncuesta->encuesta_id = 15;
-    strcpy(nuevaEncuesta->denominacion, "Servicio urbano de Pasajeros");
-    nuevaEncuesta->encuesta_mes = 6;
-    nuevaEncuesta->encuesta_anio = 25;
+    nuevaEncuesta->encuesta_id = 110;
+    strcpy(nuevaEncuesta->denominacion, "SERVICIO DE TELEFONÍA MOVIL");
+    nuevaEncuesta->encuesta_mes = 6;  // No especificado en el Excel
+    nuevaEncuesta->encuesta_anio = 2025; // No especificado en el Excel
     nuevaEncuesta->procesada = 0;
     
     // Apilar encuesta
     nuevaEncuesta->sgte = *topeEncuestas;
     *topeEncuestas = nuevaEncuesta;
 
-    // Cargar preguntas
-    agregarPregunta(15, 325, "Como considera la puntualidad del servicio", 0.35);
-    agregarPregunta(15, 327, "Que tan limpia esta la unidad", 0.3);
-    agregarPregunta(15, 328, "que tan bueno es el trato del chofer", 0.2);
-    agregarPregunta(15, 330, "Que tan satisfecho esta con los recorridos", 0.15);
+    agregarPregunta(110, 1, "DISPONIBILIDAD DEL SERVICIO", 0.4);
+    agregarRespuesta(1, 10, 1, "EN TODO MOMENTO", 1.0);
+    agregarRespuesta(1, 11, 2, "ALGUNOS CORTES", 0.6);
+    agregarRespuesta(1, 12, 3, "MUCHOS CORTES", 0.2);
 
-    // Cargar respuestas
-    // Pregunta 325
-    agregarRespuesta(325, 1500, 1, "Muy Puntual", 1.0);
-    agregarRespuesta(325, 1501, 2, "Puntual", 0.5);
-    agregarRespuesta(325, 1503, 3, "Impuntual", 0.1);
-    
-    // Pregunta 327
-    agregarRespuesta(327, 1505, 1, "Impecable", 1.0);
-    agregarRespuesta(327, 1506, 2, "Limpio", 0.6);
-    agregarRespuesta(327, 1508, 3, "Regular", 0.3);
-    agregarRespuesta(327, 1510, 4, "Sucio", 0.0);
-    
-    // Pregunta 328
-    agregarRespuesta(328, 1511, 1, "Muy buen trato", 1.0);
-    agregarRespuesta(328, 1513, 2, "Aceptable", 0.5);
-    agregarRespuesta(328, 1518, 3, "Muy mal trato", 0.0);
-    
-    // Pregunta 330
-    agregarRespuesta(330, 1519, 1, "Totalmente satisfecho", 1.0);
-    agregarRespuesta(330, 1520, 2, "Satisfecho", 0.6);
-    agregarRespuesta(330, 1521, 3, "Insatisfecho", 0.1);
+    agregarPregunta(110, 2, "PRECIO COSTO / BENEFICIO", 0.2);
+    agregarRespuesta(2, 13, 1, "EXCELENTE", 1.0);
+    agregarRespuesta(2, 14, 2, "MUY BUENO", 0.7);
+    agregarRespuesta(2, 15, 3, "BUENO", 0.5);
+    agregarRespuesta(2, 16, 4, "REGULAR", 0.3);
+    agregarRespuesta(2, 17, 5, "MALO", 0.1);
+
+    agregarPregunta(110, 3, "COBERTURA", 0.15);
+    agregarRespuesta(3, 18, 1, "MUY BUENA", 1.0);
+    agregarRespuesta(3, 19, 2, "BUENA", 0.6);
+    agregarRespuesta(3, 20, 3, "MALA", 0.2);
+
+    agregarPregunta(110, 4, "ATENCION AL CLIENTE", 0.1);
+    agregarRespuesta(4, 21, 1, "EXCELENTE", 1.0);
+    agregarRespuesta(4, 22, 2, "BUENA", 0.6);
+    agregarRespuesta(4, 23, 3, "MALA", 0.2);
+
+    agregarPregunta(110, 5, "VARIEDAD DE PLANES", 0.15);
+    agregarRespuesta(5, 24, 1, "PARA TODOS LOS GUSTOS", 1.0);
+    agregarRespuesta(5, 25, 2, "MUY BUENA VARIEDAD", 0.7);
+    agregarRespuesta(5, 26, 3, "VARIEDAD ACEPTABLE", 0.5);
+    agregarRespuesta(5, 27, 4, "POCA VARIEDAD", 0.3);
+    agregarRespuesta(5, 28, 5, "INSUFICIENTE", 0.1);
 }
-
 
 //-----------------------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------------------------------
